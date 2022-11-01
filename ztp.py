@@ -1,4 +1,3 @@
-
 # Importing cli module
 from cli import configure, cli, configurep, executep
 import re
@@ -25,24 +24,27 @@ software_mappings = {
         'software_image': 'asr1000-universalk9.17.05.01a.SPA.bin',
         'software_version': '17.05.01a',
         'software_md5_checksum': '0e4b1fc1448f8ee289634a41f75dc215'
+    },
+        'C1117-4PMLTEEAWE': {
+        'software_image': 'c1100-universalk9.17.06.03a.SPA.bin',
+        'software_version': '17.06.03a',
+        'software_md5_checksum': '2501b21b6fa3f71ea6acd7d59bcc8423'    
     }
 }
 
-http_server = '10.85.134.66'
+http_server = '192.168.10.15'
 log_tofile = True
 release_set = ['16.06', '16.07']
 
 def main():
     
     try:
-        print ('###### STARTING ZTP SCRIPT ######\n')
         # switch to enable/disbale persistent logger
         if(log_tofile == True):
             filepath = create_logfile()
             configure_logger(filepath)
       
         log_info('###### STARTING ZTP SCRIPT ######\n')
-        print ('**** Determining Device Model ****\n')
         log_info('**** Determining Device Model ****\n')
         model = get_model()
         
@@ -50,7 +52,6 @@ def main():
         software_version = software_mappings[model]['software_version']
         software_md5_checksum = software_mappings[model]['software_md5_checksum']
         
-        print ('**** Checking if upgrade is required or not ***** \n')
         log_info('**** Checking if upgrade is required or not ***** \n')
         update_status, current_version = upgrade_required(software_version)
         if update_status:
@@ -59,7 +60,6 @@ def main():
               print(current_version)
               if current_version[0:5] not in release_set:
                 if not verify_dst_image_md5(software_image, software_md5_checksum):
-                    print ('*** Attempting to transfer image to switch.. ***')
                     log_info('*** Attempting to transfer image to switch.. ***')
                     file_transfer(http_server, software_image)
                     if not verify_dst_image_md5(software_image, software_md5_checksum):
@@ -72,57 +72,45 @@ def main():
                     log_critical('XXX Failed Xfer XXX')
                     raise ValueError('XXX Failed Xfer XXX')
             
-            print ('*** Deploying EEM upgrade script ***')
             log_info('*** Deploying EEM upgrade script ***')
             deploy_eem_upgrade_script(software_image)
-            print ('*** Performing the upgrade - switch will reboot ***\n')
             log_info('*** Performing the upgrade - switch will reboot ***\n')
             cli('event manager run upgrade')
             time.sleep(600)
-            print('*** EEM upgrade took more than 600 seconds to complete..Increase the sleep time by few minutes before retrying  ***\n')
             log_info('*** EEM upgrade took more than 600 seconds to reload the device..Increase the sleep time by few minutes before retrying  ***\n')
         else:
-          print ('*** No upgrade is required!!! *** \n')
           log_info('*** No upgrade is required!!! *** \n')
 
     # Cleanup any leftover install files
-        print ('*** Deploying Cleanup EEM Script ***')
         log_info('*** Deploying Cleanup EEM Script ***')
         deploy_eem_cleanup_script()
-        print ('*** Running Cleanup EEM Script ***')
         log_info('*** Running Cleanup EEM Script ***')
         cli('event manager run cleanup')
         time.sleep(30)
 
     #print config file name to download
         config_file = '%s.cfg' % model
-        print('**** Downloading config file ****\n')
         log_info('**** Downloading config file ****\n')
         file_transfer(http_server, config_file)
-        print ('*** Trying to perform  Day 0 configuration push  **** \n')
         log_info('*** Trying to perform  Day 0 configuration push  **** \n')
         #configure_replace(config_file)
         configure_merge(config_file)
         configure('crypto key generate rsa modulus 4096')
-        print ('######  END OF ZTP SCRIPT ######\n')
         log_info('######  END OF ZTP SCRIPT ######\n')
     
     except Exception as e:
-        print('*** Failure encountered during day 0 provisioning . Aborting ZTP script execution. Error details below   ***\n')
-        log_critical('*** Failure encountered during day 0 provisioning . Aborting ZTP script execution. Error details below   ***\n' + e)
-        print(e)
+        log_critical('*** Failure encountered during day 0 provisioning . Aborting ZTP script execution. Error details below   ***\n')
+        log_critical(e)
         sys.exit(e)
        
 
 def configure_replace(file,file_system='flash:/' ):
         config_command = 'configure replace %s%s force' % (file_system, file)
-        print("************************Replacing configuration************************\n")
         log_info('************************Replacing configuration************************\n')
         config_repl = executep(config_command)
         time.sleep(120)
     
 def configure_merge(file,file_system='flash:/'):
-     print("************************Merging running config with given config file************************\n")
      log_info('************************Merging running config with given config file************************\n')
      config_command = 'copy %s%s running-config' %(file_system,file)
      config_repl = executep(config_command)
@@ -130,19 +118,15 @@ def configure_merge(file,file_system='flash:/'):
 
 def check_file_exists(file, file_system='flash:/'):
     dir_check = 'dir ' + file_system + file
-    print ('*** Checking to see if %s exists on %s ***' % (file, file_system))
     log_info('*** Checking to see if %s exists on %s ***' % (file, file_system))
     results = cli(dir_check)
     if 'No such file or directory' in results:
-        print ('*** The %s does NOT exist on %s ***' % (file, file_system))
         log_info('*** The %s does NOT exist on %s ***' % (file, file_system))
         return False
     elif 'Directory of %s%s' % (file_system, file) in results:
-        print ('*** The %s DOES exist on %s ***' % (file, file_system))
         log_info('*** The %s DOES exist on %s ***' % (file, file_system))
         return True
     elif 'Directory of %s%s' % ('bootflash:/', file) in results:
-        print ('*** The %s DOES exist on %s ***' % (file, 'bootflash:/'))
         log_info('*** The %s DOES exist on %s ***' % (file, 'bootflash:/'))
         return True
     else:
@@ -160,7 +144,6 @@ def deploy_eem_cleanup_script():
                     'action 2.2 cli command "y"'
                     ]
     results = configurep(eem_commands)
-    print ('*** Successfully configured cleanup EEM script on device! ***')
     log_info('*** Successfully configured cleanup EEM script on device! ***')
 
 def deploy_eem_upgrade_script(image):
@@ -173,17 +156,12 @@ def deploy_eem_upgrade_script(image):
                     'action 2.2 cli command "y"'
                     ]
     results = configurep(eem_commands)
-    print ('*** Successfully configured upgrade EEM script on device! ***')
     log_info('*** Successfully configured upgrade EEM script on device! ***')
 
 def file_transfer(http_server, file):
-  print('**** Start transferring  file *******\n')
   log_info('**** Start transferring  file *******\n')
   res = cli('copy http://%s/%s flash:%s' % (http_server,file,file))
-  print(res)
-  log_info(res)
-  print("\n")
-  print('**** Finished transferring device configuration file *******\n')
+  log_info(res + '\n')
   log_info('**** Finished transferring device configuration file *******\n')
 
 def find_certs():
@@ -196,7 +174,6 @@ def find_certs():
             configure(command)
 
 def get_serial():
-    print ("******** Trying to  get Serial# *********** ")
     log_info("******** Trying to  get Serial# *********** ")
     try:
         show_version = cli('show version')
@@ -210,7 +187,6 @@ def get_serial():
     return serial
 
 def get_model():
-    print ("******** Trying to  get Model *********** ")
     log_info("******** Trying to  get Model *********** ")
     try:
         show_version = cli('show version')
@@ -232,7 +208,7 @@ def get_file_system():
 def update_config(file,file_system='flash:/'):
     update_running_config = 'copy %s%s running-config' % (file_system, file)
     save_to_startup = 'write memory'
-    print("************************Copying to startup-config************************\n")
+    log_info("************************Copying to startup-config************************\n")
     running_config = executep(update_running_config)
     startup_config = executep(save_to_startup)
 
@@ -240,34 +216,27 @@ def upgrade_required(target_version):
     # Obtains show version output
     sh_version = cli('show version')
     current_version = re.search(r"Cisco IOS XE Software, Version\s+(\S+)", sh_version).group(1)
-    print('**** Current Code Version is %s ****** \n' % current_version)
-    print('**** Target Code Version is %s ****** \n' % target_version)
     log_info('**** Current Code Version is %s ****** \n' % current_version)
     log_info('**** Target Code Version is %s ****** \n' % target_version)
     # Returns False if on approved version or True if upgrade is required
-
-    if (target_version == current_version):
+    if target_version == current_version:
         return False, current_version
     else:
         return True, current_version
 
 def verify_dst_image_md5(image, src_md5, file_system='flash:/'):
     verify_md5 = 'verify /md5 ' + file_system + image
-    print ('Verifying MD5 for ' + file_system + image)
+    log_info('Verifying MD5 for ' + file_system + image)
     #
     try:
         dst_md5 = cli(verify_md5)
         if src_md5 in dst_md5:
-           print ('*** MD5 hashes match!! ***\n')
            log_info('*** MD5 hashes match!! ***\n')
            return True
         else:
-          print ('**** Failed transfer due to MD5 checksum mismatch *****')
-          log_info('**** Failed transfer due to MD5 checksum mismatch *****')
+          log_info('**** MD5 don\'t checksum mismatch *****')
           return False
     except Exception as e:
-       print ('****  MD5 checksum failed due to an exception  *****')
-       print(e)
        log_info('****  MD5 checksum failed due to an exception  *****')
        log_info(e)
        return True
@@ -283,7 +252,7 @@ def verify_dst_image_md5(image, src_md5, file_system='flash:/'):
     
 def create_logfile():
     try:
-        print ("******** Creating  a persistent log file *********** ")
+        print("******** Creating  a persistent log file *********** ")
         path = '/flash/guest-share/ztp.log'
         #file_exists = os.path.isfile(path)
         #if(file_exists == False):
@@ -317,10 +286,12 @@ def configure_logger(path):
     
 def log_info(message ):
     if(log_tofile == True):
+        print(message)
         ztp_log = logging.getLogger('root')
         ztp_log.info(message)
 
 def log_critical(message ):
+    print(message)
     if(log_tofile == True):
         ztp_log = logging.getLogger('root')
         ztp_log.critical(message)
