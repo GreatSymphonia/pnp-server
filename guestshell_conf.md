@@ -1,11 +1,12 @@
-
 ```
 !
 ! Sampleconfig for guestshell with ssh access
 !
 !
 ! Cisco Apphosting Doc
-!https://developer.cisco.com/docs/iox/#!tutorial-create-custom-package-descriptor-for-docker-apps/tutorial-create-custom-package-descriptor-for-iox-docker-app
+! https://developer.cisco.com/docs/iox/#!tutorial-create-custom-package-descriptor-for-docker-apps/tutorial-create-custom-package-descriptor-for-iox-docker-app
+! https://github.com/cisco-ie/IOSXE_ZTP
+! https://0x2142.com/getting-started-with-ios-xe-guestshell/
 !
 !
 username admin privilege 15 secret 0 <replaced>
