@@ -19,3 +19,14 @@
 
 - None
 
+
+#############################################################
+
+  changes by thl-cmk@outlook.com
+ 
+#############################################################
+
+2022-11-03: moved print to log_info/log_critical function
+            splitted software_images in models and software_images --> can reuse images for more than one models
+            start convert strings to fStrings
+            
