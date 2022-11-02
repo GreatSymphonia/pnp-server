@@ -5,6 +5,7 @@ When a network device like a switch or a router comes on-line, a fair amount of 
 At minimum, it needs to be updated to the proper software image and a golden configuration. Day zero automation techniques automate these processes, bringing up network devices into a functional state with minimal to no-touch. Hence the name Zero touch.
 The goal of Zero touch is to enable you to plug in a new network device and have it configured and transitioned into production automatically without the need for manual configuration.
 
+This project is cloned from  https://github.com/cisco-ie/IOSXE_ZTP
 
 ## Getting Started
 
