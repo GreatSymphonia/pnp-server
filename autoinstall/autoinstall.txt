@@ -3,9 +3,9 @@
 !
 ! Date: 2022-11-03
 !
-! HTTP-SERVER-IP = 192.168.10.15
-! IMAGE-NAME = c1100-universalk9.17.06.03a.SPA.bin
-! DSTINATION-FLASH = flash
+! HTTPSERVERIP = 192.168.10.15
+! IMAGENAME = c1100-universalk9.17.06.03a.SPA.bin
+! DSTINATIONFLASH = flash
 ! USERNAME = update
 ! PASSWORD = update
 !
@@ -25,14 +25,14 @@ do send log 0 STARTING AUTOINSTALL
 do send log 0 disable file prompts
 file prompt quiet
 !
-do send log 0 copy image c1100-universalk9.17.06.03a.SPA.bin from http to flash
-do copy http://192.168.10.15/c1100-universalk9.17.06.03a.SPA.bin flash:/c1100-universalk9.17.06.03a.SPA.bin
+do send log 0 copy image <IMAGENAME> from http to flash
+do copy http://<USERNAME>:<PASSWORD>@<HTTPSERVERIP>/<IMAGENAME> <DSTINATIONFLASH>:/<IMAGENAME>
 !
 do send log 0 clear boot variable
 no boot system
 !
 do send log 0 configure new boot variable
-boot system flash c1100-universalk9.17.06.03a.SPA.bin
+boot system flash <IMAGENAME>
 !
 do send log 0 creating eem applet reload
 event manager applet reload
