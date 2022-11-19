@@ -31,15 +31,15 @@ replaced by the exact serial number of the device.
 
 ## How to use
 
-First place this script, the image(s) and configuration files on a file server where the new device can download 
-them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
-
-Modify the **_ztp.py_** script for you needs.
+Modify the [**_ztp.py_**](ztp.py) script for your needs.
 
 - you need to modify the _software_images_ dictionary to contain all the images you want to use.
 - you need to modify the _models_ dictionary to have one entry for all device models you have pointing to the correct 
   entry in the _software_images_ dictionary
 - set the global variables
+
+First place this script, the image(s) and configuration files on a file server where the new device can download 
+them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP. You can [follow the process on the console](sample_output.md), but dont touch anything.
 
 ### _software_images_ dictionary
 
