@@ -3,7 +3,8 @@
 !
 ! Date: 2022-11-03
 !
-! HTTPSERVERIP = 192.168.10.15
+! SERVERIP = 192.168.10.15
+! PROTOCOLL = HTTP
 ! IMAGENAME = c1100-universalk9.17.06.03a.SPA.bin
 ! DSTINATIONFLASH = flash
 ! USERNAME = update
@@ -25,8 +26,8 @@ do send log 0 STARTING AUTOINSTALL
 do send log 0 disable file prompts
 file prompt quiet
 !
-do send log 0 copy image <IMAGENAME> from http to flash
-do copy http://<USERNAME>:<PASSWORD>@<HTTPSERVERIP>/<IMAGENAME> <DSTINATIONFLASH>:/<IMAGENAME>
+do send log 0 copy image <IMAGENAME> from <PROTOCOL>  to flash
+do copy <PROTOCOL>://<USERNAME>:<PASSWORD>@<SERVERIP>/<IMAGENAME> <DSTINATIONFLASH>:/<IMAGENAME>
 !
 do send log 0 clear boot variable
 no boot system
