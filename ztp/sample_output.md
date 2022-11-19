@@ -151,7 +151,6 @@ Autoinstall trying DHCPv6 on GigabitEthernet0/0/0
 Would you like to enter the initial configuration dialog? [yes/no]:
 Acquired IPv4 address 10.10.10.48 on Interface GigabitEthernet0/0/0
 Received following DHCPv4 options:
-        domain-name     : home.intern
         bootfile        : http://192.168.10.15/ztp.py
 
 stop Autoip processFailed to generate persistent self-signed certificate.
@@ -360,7 +359,6 @@ Autoinstall trying DHCPv6 on GigabitEthernet0/0/0
 Would you like to enter the initial configuration dialog? [yes/no]:
 Acquired IPv4 address 10.10.10.49 on Interface GigabitEthernet0/0/0
 Received following DHCPv4 options:
-        domain-name     : home.intern
         bootfile        : http://192.168.10.15/ztp.py
 
 stop Autoip processFailed to generate persistent self-signed certificate.
