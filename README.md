@@ -12,12 +12,26 @@ configuration. For this purpose Cisco offers (at least) three different ways.
 - Zero Touch Provisioning (ZTP)
 - Plug and Play (PnP)
 
-This is a collection of some basic scripts to get these things up and running.
+This is a collection of some basic scripts to get these things up and running. All thes methods expect the devices in a factory reset state. You can reset a device by issuing the command
+
+```
+pnpa service reset no-prompt
+```
+or on older systems
+
+```
+write memory
+write erase
+reload
+```
 
 ## Autoinstall
 
-the directory _autoinstall_ contains  
+The directory **_autoinstall_** contains a script to get the basic function of updating a device to your desired software image.
+This is intended to use if you have a lot of identical (from one product family) devicecs running all with the same image and you just want them to updateed without any manual intervention.
 
 ## ZTP
+
+The directory **_ztp_** contains a script to use the day0 pyton guest shell. You can use this to update and configure different device types at the same time in a fully automated way.
 
 ## PnP
