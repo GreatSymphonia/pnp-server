@@ -1,38 +1,58 @@
 # Zero Touch Provisioning (ZTP) for IOS XE based devices 
 
 # Introduction
-When a network device like a switch or a router comes on-line, a fair amount of manual configuration has to happen before it is fully functional. 
-At minimum, it needs to be updated to the proper software image and a golden configuration. Day zero automation techniques automate these processes, bringing up network devices into a functional state with minimal to no-touch. Hence the name Zero touch.
-The goal of Zero touch is to enable you to plug in a new network device and have it configured and transitioned into production automatically without the need for manual configuration.
-
-This project is cloned from  https://github.com/cisco-ie/IOSXE_ZTP
-
-## Getting Started
-
-Cisco IOS XE supports three Day Zero technologies: Network Plug-N-Play, Zero Touch Provisioning (ZTP) and Preboot eXectuion Environment (PXE).  To keep us on track with our goal we will only talk about ZTP here.
-
-On IOS XE ZTP is supported in following ways,
-
- 1. AutoInstall 
- 
-All Cisco IOS-XE (and Cisco IOS) based devices try to automatically download a configuration file during the first boot. This is called as Autoinstall.
-When a IOS device boots, the AutoInstall process tries to download the configuration via TFTP. If a custom TFTP server is used, the configuration provided to the device can be built with information gathered from DHCP Server.
-
-2. Python based
 
 When a device that supports python Zero-Touch Provisioning boots up, and does not find the startup configuration (during fresh install on Day Zero), the device enters the Zero-Touch Provisioning mode. The device locates a Dynamic Host Control Protocol (DHCP) server, bootstraps itself with its interface IP address, gateway, and Domain Name System (DNS) server IP address, and enables Guest Shell. The device then obtains the IP address or URL of a TFTP/HTTP server, and downloads the Python script to configure the device. Guest Shell provides the environment for the Python script to run. Guest Shell executes the downloaded Python script and configures the device for Day Zero. After Day Zero provisioning is complete, Guest Shell remains enabled.
 
-3. Hybrid(Autoinstall+Python)
+This project is cloned from  https://github.com/cisco-ie/IOSXE_ZTP
 
-On devices that support python ZTP and AutoInstall we can enable hybrid mode. Python based ZTP will always takes priority and will trigger a python script as in option 2 above and if that fails it will fall back to AutoInstall for generic configuration. This generic configuration file must have a hardcode name as cisconet.cfg and placed only in tftp server to be picked up by the device. 
+## How to use
 
-DHCP Server Configuration for Python + AutoInstall
+First place this script and the image you want to install on a fileserver where the new device can reach it. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
 
-    DHCP Option 67: http://x.x.x.x/ztp.py
- 
-    DHCP Option 150: tftp-server-ip
- 
-When ZTP runs, option 67 will be used to download and execute ztp.py. When AutoInstall runs, option 150 will be used to download and apply “cisconet.cfg” from the TFTP server
+Modify the **_ztp.py_** script for you needs.
+
+- you need to modify the _software_images_ dictionary to contain all the images you want to use.
+- you need to mofify the _models_ dictionary to have one entry for all device models you have pointing to the correct entry in the _software_images_ dictionary
+
+
+
+### _software_images_ dictionary
+
+Each entry in the _software_images_ dictionary contains
+- an unique name, i.e. the product family
+- the name of the image to use
+- the version of the image
+- the md5 summ of the image
+- (optional) if install mode is required or not
+
+
+```
+'C1100': SoftwareImage(
+    image='c1100-universalk9.17.06.04.SPA.bin',
+    version='17.06.04',
+    md5_image='2caa962f5ed0ecc52f99b90c733c54de',
+    install_mode=True
+)
+```
+
+### _models_ dictionary
+
+each entry in the _models_ dictionary contains
+- a unique name that exacly matches the model number of the divice
+- a pointer to the image for this model in the _software_images_ dictionary
+- (optional) if install mode is required or not
+
+
+```
+'C1117-4PMLTEEAWE': Model(
+    image='C1100_17_06_04',
+    model='C1117-4PMLTEEAWE',
+    install_mode=False,
+)
+```
+
+
 
 
 
