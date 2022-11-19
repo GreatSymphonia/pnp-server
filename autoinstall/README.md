@@ -2,9 +2,7 @@ This is a basic script used to automatically update Cisco IOS/IOS-XE devices on 
 
 ## How to use
 
-First place this script and the image you want to install on a fileserver where the new device can reach it. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
-
-Second modify the script to your liking (replace all the <> placeholders with your values, including <>). 
+First modify the script [**_autoinstall.txt_**](/autoinstall.txt) to your liking (replace all the <> placeholders with your values, including <>). 
 
 You need this information. 
 
@@ -16,6 +14,8 @@ You need this information.
 - PASSWORD = update
 
 USERNAME and PASSWORD are optional. If your file server doesn't uses authentication remove `<USERNAME>:<PASSWORD>@` from the copy command. 
+
+Second place this script and the image you want to install on a fileserver where the new devices can donload it from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
 
 Last configure your DHCP server to have option 67 pointing to this script. Here a sample how to do this on a IOS/IOS-XE switch.
 
@@ -52,6 +52,6 @@ ip http path flash:
 !
 ```
 
-Now you are ready to attach your new devices to the network and switch it on. Wait till the autoinstall process is done. You can follow the process on the console, but touch anything.
+Now you are ready to attach your new devices to the network and switch it on. Wait till the autoinstall process is done. You can [follow the process on the console](sample_output.md), but dont touch anything.
 
 If everything works, your device gets an IP-address and the path to the script via DHCP, downloads the script, downloads the new image, sets the boot variable, reboots and erases its startup-configuration and any old images. 
