@@ -45,9 +45,9 @@ Modify the **_ztp.py_** script for you needs.
 
 Each entry in the _software_images_ dictionary contains
 - a unique name, i.e., the product family + version
-- the name of the image to use
-- the version of the image
-- the md5 sum of the image
+- the name of the image file
+- the IOS-XE version of the image
+- the md5 sum of the image file
 - (optional) if install mode is required or not
 
 

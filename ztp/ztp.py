@@ -260,9 +260,9 @@ def main():
             configure_logger(filepath)
 
         log_info('###### STARTING ZTP SCRIPT ######')
-        print('')
-        log_info('Python version................: ' + sys.version.replace('\n', ' '))
-        print('')
+        # print('')
+        # log_info('Python version.................: ' + sys.version.replace('\n', ' '))
+        # print('')
 
         log_info('Getting device info')
         device = Device()
