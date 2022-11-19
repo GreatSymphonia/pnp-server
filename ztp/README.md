@@ -38,8 +38,10 @@ Modify the [**_ztp.py_**](ztp.py) script for your needs.
   entry in the _software_images_ dictionary
 - set the global variables
 
-First place this script, the image(s) and configuration files on a file server where the new device can download 
+Second place this script, the image(s) and configuration files on a file server where the new device(s) can download 
 them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP. You can [follow the process on the console](sample_output.md), but dont touch anything.
+
+**Note:** To speed up the image transfer, put the image on an USB stick and connect them to the new device. The script will first look on `usb0:` to find the image file before downloding it from the file server.
 
 ### _software_images_ dictionary
 
@@ -80,14 +82,13 @@ Each entry in the _models_ dictionary contains
 
 - _http_image_: the ip address of the HTTP server, where your images are stored
 - _http_config_: the ip address of the HTTP server, where your config files are stored
-- _ntp_server_:  the ip address of your NTP to synchronize timestamps of log messages (disable with 'ntp_server=None')
+- _ntp_server_:  the ip address of your NTP to synchronize time stamps of log messages (disable with 'ntp_server=None')
 - _syslog_server_: the ip address of yor syslog server (disable with 'syslog_server=None')
-- _console_log_level_: the log level on the console, default is emergencies for a clean output
-- _log_to_file_: set to False to disable the creation of a logfile (default is True)
-- _switch_to_install_mode_: set to False to use bundle mode by default, can be overridden in _models_ and _software_images_
-  on the model or image level
-- _verbose_: if set to True the script will show each singel exec/config command on the console by using 
-  executep/configurep insted of execute/configure 
+- _console_log_level_: the log level on the console, default is `emergencies` for a clean output
+- _log_to_file_: set to `False` to disable the creation of a logfile (default is `True`). The logfile is under `flash:/guest-share/ztp.log`.
+- _switch_to_install_mode_: set to `False` to use bundle mode by default, can be overridden in _models_/_software_images_ on the model or image level
+- _verbose_: if set to `True` the script will show each single exec/config command on the console by using 
+  `executep`/`configurep` insted of `execute`/`configure` 
 
 Sample global variables section
 ```    
@@ -109,6 +110,15 @@ it will be automatically downloaded to device and gets executed.
 A DHCP server is required for ZTP, as this is how the device learns about where to find the Python configuration file 
 from. In our case, the DHCP server is the open source ISC DHCPd and the configuration file is at /etc/dhcp/dhcpd.conf 
 in a Linux developer box. The option bootfile-name is also known as option 67 and it specifies the python file ztp.py
+
+Here a sample how to do this on an IOS/IOS-XE switch.
+```
+ip dhcp pool autoinstall
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ option 67 ascii http://192.168.10.15/ztp.py
+ lease 0 2
+```
 
 Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for your use. 
 ```    
@@ -136,15 +146,6 @@ Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for you
         range x.x.x.x x.x.x.x;
         option bootfile-name "http://x.x.x.x/ztp.py";
       }
-```
-
-Here a sample how to do this on an IOS/IOS-XE switch.
-```
-ip dhcp pool autoinstall
- network 192.168.10.0 255.255.255.0
- default-router 192.168.10.1
- option 67 ascii http://192.168.10.15/ztp.py
- lease 0 2
 ```
 
 #### Useful DHCP commands 
