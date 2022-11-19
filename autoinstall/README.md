@@ -25,6 +25,30 @@ ip dhcp pool autoinstall
  default-router 192.168.10.1
  option 67 ascii http://192.168.10.15/autoinstall.txt
  lease 0 2
+!
+```
+
+You can use an IOS/IOS-XE switch to deliver the autoinstall script like this.
+
+```
+tftp-server flash:/autoinstall.txt
+!
+ip dhcp pool autoinstall
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ option 67 ascii autoinstall.txt
+ lease 0 2
+!
+```
+If the imgae you want to deliver fits on the swicth you can also use the switch to deliver the image via http.
+
+```
+username update privilege 15 password 0 update
+!
+ip http server
+ip http authentication
+ip http path flash:
+!
 ```
 
 Now you are ready to attach your new devices to the network and switch it on. Wait till the autoinstall process is done. You can follow the process on the console, but touch anything.
