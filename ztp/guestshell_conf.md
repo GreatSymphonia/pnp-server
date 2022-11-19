@@ -1,6 +1,6 @@
 ```
 !
-! Sampleconfig for guestshell with ssh access
+! Sample config for guestshell with ssh access
 !
 !
 ! Cisco Apphosting Doc

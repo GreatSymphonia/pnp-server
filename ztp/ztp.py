@@ -45,9 +45,8 @@ class SoftwareImage:
 
 
 class Model:
-    def __init__(self, family, model, install_mode=True):
-        self.family = family
-        self.model = model
+    def __init__(self, image, install_mode=True):
+        self.image = image
         self.install_mode = install_mode
 
 
@@ -126,25 +125,21 @@ software_images = {
 
 models = {
     'C9300-24P': Model(
-        family='CAT9K',
-        model='C9300-24P',
+        image='CAT9K',
     ),
     'C9500-24Q': Model(
-        family='CAT9K',
-        model='C9500-24Q',
+        image='CAT9K',
     ),
     'ASR1001-HX': Model(
-        family='ASR1000',
-        model='ASR1001-HX',
+        image='ASR1000',
     ),
     'C1117-4PMLTEEAWE': Model(
-        family='C1100_17_06_04',
-        model='C1117-4PMLTEEAWE',
+        image='C1100_17_06_03',
         # install_mode=False,
     ),
 }
 
-# global variables
+# global variables start
 http_image = '192.168.10.15'
 http_config = '192.168.10.15'
 ntp_server = '10.10.10.1'
@@ -160,10 +155,12 @@ syslog_server = '10.10.10.1'
 #   7 - debugging
 console_log_level = 'emergencies'
 log_to_file = True
-no_md5_verify = ['16.06', '16.07']  # do not verify image if version in this list? Why?
-reload_in = 2
 switch_to_install_mode = True
 verbose = False
+# global variables end
+
+reload_in = 2
+no_md5_verify = ['16.06', '16.07']  # do not verify image if version in this list? Why?
 
 if verbose:
     _configure = configurep
@@ -284,11 +281,11 @@ def main():
 
         model = models[device.model]
 
-        if model.family not in software_images.keys():
-            log_info('Image family: ' + model.family + ' not found in ZTP script data. Stopping ZTP....')
+        if model.image not in software_images.keys():
+            log_info('Image: ' + model.image + ' not found in ZTP script data. Stopping ZTP....')
             sys.exit()
 
-        target_software = software_images[model.family]
+        target_software = software_images[model.image]
         print('')
         log_info('Target image data')
         log_info('Image..........................: ' + target_software.image)
