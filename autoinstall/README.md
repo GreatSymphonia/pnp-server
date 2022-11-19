@@ -36,6 +36,7 @@ tftp-server flash:/autoinstall.txt
 ip dhcp pool autoinstall
  network 192.168.10.0 255.255.255.0
  default-router 192.168.10.1
+ option 150 ip 192.168.10.1
  option 67 ascii autoinstall.txt
  lease 0 2
 !
