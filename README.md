@@ -27,7 +27,7 @@ reload
 
 ## Autoinstall
 
-The directory **_autoinstall_** contains a script to get the basic function of updating a device to your desired software image. This is intended to use if you have a lot of identical (from one product family) devices running all with the same image and you just want them to updated without any manual intervention.
+The directory **_autoinstall_** contains a script to get the basic function of updating a device to your desired software image. This is intended to use if you have a lot of identical (from one product family) devices running all with the same image and you just want them to get updated without any manual intervention.
 
 ## ZTP
 
