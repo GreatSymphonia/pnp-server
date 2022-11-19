@@ -2,19 +2,18 @@ This is a basic script used to automatically update Cisco IOS/IOS-XE devices on 
 
 ## How to use
 
-First plase the image to install on the new device on a fileserver the device can reach. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
+First place this script and the image you want to install on a fileserver where the new device can reach it. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
 
 Second modify the script to your liking. You need this information. 
 
-- HTTPSERVERIP = 192.168.10.15
+- SERVERIP = 192.168.10.15
+- PROTOCOLL = HTTP
 - IMAGENAME = c1100-universalk9.17.06.03a.SPA.bin
 - DSTINATIONFLASH = flash
 - USERNAME = update
 - PASSWORD = update
 
-USERNAME and PASSWORD ar optional if your file server dont use authentication. 
-
-Third place the script on a fileserver the new device can reach. 
+USERNAME and PASSWORD are optional if your file server doesn't uses authentication. 
 
 Last configure your DHCP server to have option 67 pointing to this script. Here a sample how to do this on a IOS/IOS-XE switch.
 
