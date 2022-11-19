@@ -12,7 +12,9 @@ configuration. For this purpose Cisco offers (at least) three different ways.
 - [Zero Touch Provisioning (ZTP)](/ztp/README.md)
 - [Plug and Play (PnP)](/pnp/README.md)
 
-This is a collection of some basic scripts to get these things up and running. All thes methods expect the devices in a factory reset state. You can reset a device by issuing the command
+This is a collection of some basic scripts to get these things up and running. All thes methods expect the devices in a factory reset state. 
+
+You can reset a device by issuing the command
 
 ```
 pnpa service reset no-prompt
@@ -32,12 +34,13 @@ Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contribut
 ---
 ### Autoinstall
 
-With [**_autoinstall_**](/autoinstall/README.md) you can update e new device your desired software image. This is intended to use with a lot of identical devices (from one product family) you just want them to get updated without any manual intervention. There is no device configuration included,
+With [**_autoinstall_**](/autoinstall/README.md) you can update a new devices to your desired software image. This is intended to use with a lot of identical devices (from one product family), where you just want them to get updated without any manual intervention. There is no device configuration included,
 
 ---
 ### ZTP
 
-With [**_ztp_**](/ztp/README.md) you can update and configure a lot of different devices at the same time in a fully automated way. ZTP uses the day0 pyton guest shell.
+With [**_ZTP_**](/ztp/README.md) you can update and configure a lot of different devices at the same time in a fully automated way. ZTP uses the day0 pyton guest shell.
 
 ---
 ### PnP
+
