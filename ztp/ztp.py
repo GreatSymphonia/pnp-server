@@ -138,7 +138,7 @@ models = {
         model='ASR1001-HX',
     ),
     'C1117-4PMLTEEAWE': Model(
-        family='C1100_17_05',
+        family='C1100_17_06_04',
         model='C1117-4PMLTEEAWE',
         # install_mode=False,
     ),
@@ -163,6 +163,14 @@ log_to_file = True
 no_md5_verify = ['16.06', '16.07']  # do not verify image if version in this list? Why?
 reload_in = 2
 switch_to_install_mode = True
+verbose = False
+
+if verbose:
+    _configure = configurep
+    _execute = executep
+else:
+    _configure = configure
+    _execute = executep
 
 
 class Device:
@@ -245,7 +253,7 @@ def main():
             'logging count',
             'logging on',
         ]
-    configurep(pre_conf)
+    _configure(pre_conf)
 
     try:
         # switch to enable/disable persistent logger
@@ -296,17 +304,14 @@ def main():
         update_status = False if device.current_version == target_software.version else True
         log_info('Update required................: ' + str(update_status))
 
-        # _switch_to_install_mode = True if not device.install_mode and \
-        #                                  target_software.install_mode and \
-        #                                  model.install_mode else False
-
-        # _switch_to_install_mode = global = model = target_software
-        _switch_to_install_mode = model.install_mode if model.install_mode is not None else switch_to_install_mode
-        _switch_to_install_mode = target_software.install_mode if target_software.install_mode is not None else _switch_to_install_mode
+        # switch_to_install_mode already done
         if device.install_mode and not update_status:
-            log_info('Switch to install mode required: False')
+            _switch_to_install_mode = False
         else:
-            log_info('Switch to install mode required: ' + str(_switch_to_install_mode))
+            _switch_to_install_mode = model.install_mode if model.install_mode is not None else switch_to_install_mode
+            _switch_to_install_mode = target_software.install_mode if target_software.install_mode is not None else _switch_to_install_mode
+
+        log_info('Switch to install mode required: ' + str(_switch_to_install_mode))
 
         log_info('Needs startup-config...........: ' + str(device.needs_startup))
         print('')
@@ -354,13 +359,13 @@ def main():
             log_info('Downloading config file: ' + config_file)
             file_transfer(http_config, config_file)
             log_info('Generate ssh key...')
-            configurep('crypto key generate rsa modulus 4096 label ssh-key')
-            executep('write memory')
+            _configure('crypto key generate rsa modulus 4096 label ssh-key')
+            _execute('write memory')
             log_info('Copy ' + config_file + ' to startup-config')
-            executep('copy ' + config_file + ' startup-config')
-            executep('delete /force flash:/' + config_file)
+            _execute('copy ' + config_file + ' startup-config')
+            _execute('delete /force flash:/' + config_file)
             log_info('System will reload in ' + str(reload_in) + ' minutes')
-            executep('reload in ' + str(reload_in))
+            _execute('reload in ' + str(reload_in))
 
         log_info('######  END OF ZTP SCRIPT ######')
 
@@ -407,13 +412,13 @@ def device_cleanup():
             'action 4.1 cli command "delete /force flash:/tracelog/*"',
             'action 4.2 cli command "delete /force flash:/license_evlog/*"',
         ]
-        configurep(eem_commands)
+        _configure(eem_commands)
 
     def __remove_eem_cleanup_script():
         eem_commands = [
             'no event manager applet cleanup',
         ]
-        configurep(eem_commands)
+        _configure(eem_commands)
 
     __deploy_eem_cleanup_script()
     log_info('Running cleanup EEM Script')
@@ -425,32 +430,32 @@ def device_cleanup():
 
 
 def activate_image(image):
-    configurep([
+    _configure([
         'no boot system',
         'boot system flash ' + image,
     ])
-    executep('write memory')
-    executep('write erase')
+    _execute('write memory')
+    _execute('write erase')
     log_info('System will reload in ' + str(reload_in) + ' minutes')
-    executep('reload in ' + str(reload_in))
+    _execute('reload in ' + str(reload_in))
 
 
 def switch_to_install(image):
     log_info('Performing switch to install mode - device will reload')
     sleep_time_min = 40
-    configurep([
+    _configure([
         'no boot system',
         'boot system flash packages.conf',
-        # needs event manger, because you can not run "install add .." with executep() :-(
+        # needs event manger, because you can not run "install add .." with _execute() :-(
         'event manager applet switch_to_install',
         ' event none maxrun ' + str(sleep_time_min * 60),
         ' action 1.0 cli command "enable"',
         ' action 2.0 cli command "install add file flash:/' + image + ' activate commit prompt-level none"',
     ])
-    executep('write memory')
-    executep('write erase')
+    _execute('write memory')
+    _execute('write erase')
     log_info('Wait up to ' + str(sleep_time_min) + ' minutes to get the change to install mode done...')
-    executep('event manager run switch_to_install')
+    _execute('event manager run switch_to_install')
     sleep((sleep_time_min * 60) + 5)
     log_info(
         'EEM switch to install mode took more than ' + str(sleep_time_min) +
