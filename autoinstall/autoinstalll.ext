@@ -121,3 +121,10 @@ exit
 !
 !
 do send log 0 save config
+do wr mem
+!
+do send log 0 reload device
+do event manager run reload
+!
+do send log 0 FINISH autoinstall going to reboot
+end
