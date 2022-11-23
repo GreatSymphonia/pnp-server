@@ -1,0 +1,105 @@
+!
+! cisco autoinstall with dhcp option 67
+!
+! Date: 2022-11-03
+!
+! HTTP-SERVER-IP = 192.168.10.15
+! IMAGE-NAME = c3560c405ex-universalk9-mz.152-2.E10.bin c3560c405ex-universalk9-mz.150-2.SE12.bin
+! DSTINATION-FLASH = flash
+! USERNAME = update
+! PASSWORD = update
+!
+loggin console emergencies
+!loggin console debug
+!
+clock timezone CET 1 0
+clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00
+ntp server 10.10.10.1
+!
+line con 0
+  logging synchronous
+  width 150
+exit
+!
+do send log 0 STARTING AUTOINSTALL
+!
+do send log 0 disable file prompts
+file prompt quiet
+!
+do send log 0 copy image c3560c405ex-universalk9-mz.150-2.SE12.bin from http to flash
+do copy http://192.168.10.15/c3560c405ex-universalk9-mz.150-2.SE12.bin flash:/c3560c405ex-universalk9-mz.150-2.SE12.bin
+!
+do send log 0 clear boot variable
+no boot system
+!
+do send log 0 configure new boot variable
+boot system flash:/c3560c405ex-universalk9-mz.150-2.SE12.bin
+!
+do send log 0 creating eem applet reload
+event manager applet reload
+ description reload system
+ event none maxrun 60
+ action 10 cli command "enable"
+ action 20 cli command "send log 0 EEM STARTING RELOAD"
+ action 30 cli command "reload" pattern "\[confirm\]"
+ action 45 cli command "y"
+ action 50 cli command "send log 0 EEM FINISH RELOAD"
+ exit
+!
+do send log 0 creating eem applet to cleanup on next reload
+!
+! no event manager applet get-startup
+event manager applet get-startup authorization bypass
+ description get startup on reload
+ event timer cron cron-entry "@reboot" maxrun 600 name ON-REBOOT
+ ! set defaults
+ action 0010.00 cli command "enable"
+ action 0010.01 cli command "term len 0"
+ action 0010.02 cli command "send log 0 EEM START"
+ action 0010.05 cli command "send log 0 wait until the device has copleted reloading (180s)..."
+ action 0010.10 wait 180
+ !
+ action 0020.00 cli command "send log 0 base config"
+ action 0020.03 cli command "configure terminal"
+ action 0020.04 cli command " file prompt quiet"
+ action 0020.05 cli command " crypto key generate rsa modulus 2048 label ssh-key"
+ action 0020.10 cli command " interface Vlan1"
+ action 0020.15 cli command "   ip address dhcp"
+ action 0020.20 cli command "   no shutdown"
+ action 0020.25 cli command " exit"
+ action 0020.30 cli command " ntp server 10.10.10.1"
+ action 0020.95 cli command "end"
+ action 0020.97 cli command "send log 0 wait for vlan 1 to come up and get an ip address (120s)"
+ action 0020.99 wait 120
+ !
+ action 0030.00 cli command "send log 0 clear configuration"
+ action 0030.15 cli command "write mem"
+ action 0030.20 cli command "write erase" pattern "\[confirm\]"
+ action 0030.25 cli command "y"
+ !
+ action 0040.00 cli command "send log 0 get serial number"
+ action 0040.05 set _serial ""
+ action 0040.10 cli command "show version | i Processor board ID"
+ action 0040.15 regexp "^Processor\sboard\sID\s+\s:\s([A-Z0-9]+)" "$_cli_result" _match  _serial
+ action 0040.20 if $_serial eq ""
+ action 0040.22   cli command "show version | i System serial number"
+ action 0040.25   regexp "^System\sserial\snumber\s+\s:\s([A-Z0-9]+)" "$_cli_result" _match  _serial
+ action 0040.27 end
+ !
+ action 0050.00 comment if no serial exit
+ action 0050.10 if $_serial eq ""
+ action 0050.15   cli command "send log 0 no serial number found. Can not download configuration."
+ action 0050.20   exit
+ action 0050.30 end
+ !
+ action 0060.00 cli command "send log 0 comment get config file"
+ action 0060.32 cli command "send log 0 get config file $_serial.cfg"
+ action 0060.33 cli command "copy http://192.168.10.15/$_serial.cfg startup-config"
+ !
+ action 9990.00 cli command "send log 0 going to reload"
+ action 9990.10 reload
+ action 9999.00 cli command "send log 0 EEM FINISH"
+exit
+!
+!
+do send log 0 save config
