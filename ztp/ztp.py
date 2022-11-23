@@ -323,6 +323,8 @@ def main():
         if update_status:
             # check if image transfer needed
             if not check_file_exists(target_software.image):
+                log_info(f'Going to download {target_software.image}')
+                log_info('Depending on file size and transfer speed this can take some time (up to 1 hour or more)')
                 file_transfer(http_image, target_software.image, device.get_usb_present())
 
             # check if md5 correct
@@ -467,7 +469,6 @@ def file_transfer(http_server, file, usb=False):
         res = cli('copy usb0:/' + file + ' flash:/' + file)
     else:
         log_info('Start transferring ' + file + ' from http ' + http_server + '...')
-        log_info('Depending on file size and transfer speed this can take some time (up to 1 hour or more)')
         res = cli('copy http://' + http_server + '/' + file + ' flash:/' + file)
     log_info(res)
     log_info('Finished transferring ' + file)
