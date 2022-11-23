@@ -184,7 +184,7 @@ class Device:
 
         # get model
         try:
-            self.model = re.search(r'Model Number\s+:\s+(\S+)', self.__show_version).group(1)
+            self.model = re.search(r'Model number\s+:\s+(\S+)', self.__show_version).group(1)
         except AttributeError:
             self.model = re.search(r'cisco\s(\w+-.*?)\s', self.__show_version).group(1)
 

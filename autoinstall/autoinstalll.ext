@@ -56,7 +56,7 @@ event manager applet get-startup authorization bypass
  action 0010.00 cli command "enable"
  action 0010.01 cli command "term len 0"
  action 0010.02 cli command "send log 0 EEM START"
- action 0010.05 cli command "send log 0 wait until the device has copleted reloading (180s)..."
+ action 0010.05 cli command "send log 0 wait until the device has finished reloading (180s)..."
  action 0010.10 wait 180
  !
  action 0020.00 cli command "send log 0 base config"
@@ -76,7 +76,7 @@ event manager applet get-startup authorization bypass
  action 0030.15 cli command "write mem"
  action 0030.20 cli command "write erase" pattern "\[confirm\]"
  action 0030.25 cli command "y"
- !
+ ! get serial
  action 0040.00 cli command "send log 0 get serial number"
  action 0040.05 set _serial ""
  action 0040.10 cli command "show version | i Processor board ID"
@@ -85,16 +85,34 @@ event manager applet get-startup authorization bypass
  action 0040.22   cli command "show version | i System serial number"
  action 0040.25   regexp "^System\sserial\snumber\s+\s:\s([A-Z0-9]+)" "$_cli_result" _match  _serial
  action 0040.27 end
+ ! get model
+ action 0050.00 cli command "send log 0 get model"
+ action 0050.05 set _model ""
+ action 0050.10 cli command "show version | i Model number"
+ action 0050.15 reqexp "^Model\snumber\s+:\s([A-Z0-9\-]+)" "$_cli_result" _match _model
+ action 0050.20 if $_model eq ""
+ action 0050.25   cli command "show version | i bytes of memory"
+ action 0050.30   reqexp "^cisco\s([A-Z0-9\-]+)\s" "$_cli_result" _match _model
+ action 0050.35 end
+ ! get version
+ action 0060.00 cli command "send log 0 get version"
+ action 0060.05 set _version ""
+ action 0060.10 cli command "show version | i IOS"
+ action 0060.15 reqexp "Version\s([\d\.\(\)A-Z]+)\," "$_cli_result" _match _version
  !
- action 0050.00 comment if no serial exit
- action 0050.10 if $_serial eq ""
- action 0050.15   cli command "send log 0 no serial number found. Can not download configuration."
- action 0050.20   exit
- action 0050.30 end
+ action 0070.00 cli command "send log 0 Model   : $_model"
+ action 0070.05 cli command "send log 0 S/N     : $_serial"
+ action 0070.10 cli command "send log 0 Version : $_version"
  !
- action 0060.00 cli command "send log 0 comment get config file"
- action 0060.32 cli command "send log 0 get config file $_serial.cfg"
- action 0060.33 cli command "copy http://192.168.10.15/$_serial.cfg startup-config"
+ action 0080.00 comment if no serial exit
+ action 0080.10 if $_serial eq ""
+ action 0080.15   cli command "send log 0 no serial number found. Can not download configuration."
+ action 0080.20   exit
+ action 0080.30 end
+ !
+ action 0090.00 cli command "send log 0 comment get config file"
+ action 0090.05 cli command "send log 0 get config file $_serial.cfg"
+ action 0090.10 cli command "copy http://192.168.10.15/$_serial.cfg startup-config"
  !
  action 9990.00 cli command "send log 0 going to reload"
  action 9990.10 reload
