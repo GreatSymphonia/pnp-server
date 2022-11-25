@@ -98,7 +98,8 @@ event manager applet get-startup authorization bypass
  action 0060.00 cli command "send log 0 get version"
  action 0060.05 set _version ""
  action 0060.10 cli command "show version | i IOS"
- action 0060.15 reqexp "Version\s([\d\.\(\)A-Z]+)\," "$_cli_result" _match _version
+ ! action 0060.15 reqexp "Version\s([\d\.\(\)A-Z]+)\," "$_cli_result" _match _version
+ action 0060.15 reqexp "Version\s(.+)\," "$_cli_result" _match _version
  !
  action 0070.00 cli command "send log 0 Model   : $_model"
  action 0070.05 cli command "send log 0 S/N     : $_serial"
