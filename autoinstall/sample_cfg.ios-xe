@@ -97,8 +97,8 @@ event manager applet finish
  action 0000.02 cli command "send log 0 EEM START finish config"
  action 0000.03 handle-error type warn
  !
- action 0001.00 cli command "send log 0 wait 120s till reload is complete"
- action 0001.05 wait 120
+ ! action 0001.00 cli command "send log 0 wait 120s till reload is complete"
+ ! action 0001.05 wait 120
  !
  action 0010.00 cli command "send log 0 generating ssh key"
  action 0010.05 cli command "configure terminal"
@@ -106,9 +106,9 @@ event manager applet finish
  action 0010.15 cli command "  ip ssh rsa keypair-name SSH-KEY"
  action 0010.20 cli command "end"
  !
- action 0015.00 cli command "send log 0 remove inactive images"
- action 0015.05 cli command "install remove inactive" pattern "\[y/n\]"
- action 0015.10 cli command "y"
+ ! action 0015.00 cli command "send log 0 remove inactive images"
+ ! action 0015.05 cli command "install remove inactive" pattern "\[y/n\]"
+ ! action 0015.10 cli command "y"
  !
  action 9999.00 cli command "send log 0 remove EEM script finish config"
  action 9999.05 cli command " configure terminal"
