@@ -1,7 +1,10 @@
 !
 ! cisco autoinstall with dhcp option 67
 !
-! Date: 2022-11-26
+! Author: thl-cmk[at]outlook[dot]com
+! URL   : https://thl-cmk.hopto.org
+! Date  : 2022-11-28
+! 
 !
 event manager applet autoinstall authorization bypass
  description get startup on reload
@@ -31,7 +34,7 @@ event manager applet autoinstall authorization bypass
  action 0011.03 cli command "  logging synchronous"
  action 0011.04 cli command "  no exec-timeout
  action 0011.05 cli command "  wifth 150
- extion 0011.06 cli command "!"
+ action 0011.06 cli command "!"
  action 0011.07 cli command " clock timezone CET 1 0"
  action 0011.08 cli command " clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00"
  action 0011.09 cli command " ntp server 192.168.10.254"
@@ -56,7 +59,11 @@ event manager applet autoinstall authorization bypass
  action 0015.25   cli command "show version | i bytes of memory"
  action 0015.30   regexp "^cisco\s([A-Z0-9\-]+)\s" "$_cli_result" _match _model
  action 0015.35 end
- action 0015.40 cli command "send log 0 Model          : |$_model|"
+ action 0015.40 if $_model eq ""
+ action 0015.45   cli command "show version | i \*0"
+ action 0015.50   regexp "\s+([A-Z0-9]+)\s+" "$_cli_result" _match _model
+ action 0015.55 end
+ action 0015.60 cli command "send log 0 Model          : |$_model|"
  !
  action 0016.05 set _serial ""
  action 0016.10 cli command "show version | i Processor board ID"
@@ -93,6 +100,12 @@ event manager applet autoinstall authorization bypass
  action 0022.20   set _target_version "17.06.04"
  ! action 0022.20   set _target_version "17.06.03a"
  action 0022.25 end
+ !
+action 0023.05 string first "|$_model|" "|CISCO1841|"
+ action 0023.10 if $_string_result gt -1
+ action 0023.15   set _target_image "c1841-entservicesk9-mz.151-4.M12a.bin"
+ action 0023.20   set _target_version "15.1(4)M12a"
+ action 0023.25 end
  !
  action 0030.00 cli command "send log 0 Target version : |$_target_version|"
  action 0030.05 cli command "send log 0 Target image   : |$_target_image|"
