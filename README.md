@@ -8,7 +8,7 @@ state with minimal to no-touch. Hence the name Zero touch. The goal of Zero touc
 network device and have it configured and transitioned into production automatically without the need for manual 
 configuration. For this purpose Cisco offers (at least) three different ways.
 
-- [Autoinstall](/autoinstall.README.md)
+- [Autoinstall](/autoinstall/README.md)
 - [Zero Touch Provisioning (ZTP)](/ztp/README.md)
 - [Plug and Play (PnP)](/pnp/README.md)
 
