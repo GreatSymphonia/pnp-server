@@ -3,8 +3,8 @@
 !
 ! Author: thl-cmk[at]outlook[dot]com
 ! URL   : https://thl-cmk.hopto.org
-! Date  : 2022-12-01
-! File  : autoinstall.ext
+! Date  : 2022-12-02
+! File  : autoinstall.txt
 !
 ! Check if OS update is necessary, download/activate image/startup-config 
 !
@@ -12,16 +12,16 @@ event manager applet autoinstall authorization bypass
  description get image and config on day0
  event timer countdown time 60 maxrun 3600 name autoinstall
  ! set defaults
- action 0000.00 set _target_image ""
- action 0000.01 set _target_version ""
- action 0000.02 set _image_source "http://192.168.10.15"
- action 0000.03 set _config_source "http://192.168.10.15"
- action 0000.04 set _reload_in "5"
- action 0000.05 set _set_bootvar "False"
- action 0000.07 set _ntp_server "10.10.10.1"
- action 0000.06 set _log_level "informational"
- action 0000.08 set _log_server "192.168.10.15"
- action 0000.09 set _log_facility "local7"
+ action 0000.00 set _image_source "http://192.168.10.15"
+ action 0000.01 set _config_source "http://192.168.10.15"
+ action 0000.02 set _ntp_server "10.10.10.1"
+ action 0000.05 set _log_server "192.168.10.15"
+ action 0000.04 set _log_level "informational"
+ action 0000.05 set _log_facility "local7"
+ action 0000.06 set _reload_in "5"
+ action 0000.07 set _set_bootvar "False"
+ action 0000.08 set _target_image ""
+ action 0000.09 set _target_version ""
  !
  action 0001.00 cli command "enable"
  action 0001.01 cli command "term len 0"
@@ -138,7 +138,8 @@ event manager applet autoinstall authorization bypass
  action 0050.10  cli command "configure terminal"
  action 0050.15  cli command "no boot system"
  action 0050.20  cli command "do write memory"
- action 0050.30  cli command "boot system flash $_target_image"
+ action 0050.25  cli command "boot system flash $_target_image"
+ action 0050.30  cli command "boot system flash:/$_target_image"
  action 0050.35  cli command "end"
  action 0050.40  cli command "write mem"
  action 0050.99 end
