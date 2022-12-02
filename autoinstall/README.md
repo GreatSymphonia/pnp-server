@@ -2,7 +2,7 @@ This is a basic script used to automatically update and configure Cisco IOS/IOS-
 
 ## How to use
 
-First modify the script [**_autoinstall.txt_**](autoinstall.txt) with your values. 
+First modify the script [**_autoinstall.txt_**](/autoinstall/autoinstall.txt) with your values. 
 
 You need this information. 
 
