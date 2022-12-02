@@ -5,26 +5,27 @@ This is a basic script used to automatically update and configure Cisco IOS/IOS-
 First modify the script [**_autoinstall.txt_**](autoinstall.txt) with your values. 
 
 You need this information. 
-
-  - image source  ie: http://192.168.10.15
-  - config source  ie: http://192.168.10.15
-  - ntp server (optional) ie: 10.10.10.1
-  - log server (optionl) 192.168.10.15
-  - model PID(s) ie: C1117-4PMLTEEAWE or WS-C3560CG-12TC-S
-  - serial number  of each device
+  - image source i.e.: http://192.168.10.15
+  - config source i.e.: http://192.168.10.15
+  - ntp server (optional) i.e.: 10.10.10.1
+  - log server (optional) i.e.: 192.168.10.15
+  - model PID(s) i.e.: C1117-4PMLTEEAWE or WS-C3560CG-12TC-S
+  - serial number of each device i.e.: FCZ094210DS
 
 In section 0000 set your global values
+
 ```
- action 0000.02 set _image_source "http://192.168.10.15"
- action 0000.03 set _config_source "http://192.168.10.15"
- action 0000.07 set _ntp_server "10.10.10.1"
- action 0000.08 set _log_server "192.168.10.15"
+ action 0000.00 set _image_source "http://192.168.10.15"
+ action 0000.01 set _config_source "http://192.168.10.15"
+ action 0000.02 set _ntp_server "10.10.10.1"
+ action 0000.03 set _log_server "192.168.10.15"
 ```
 
 If you dont use a ntp or log server set this values like this
+
 ```
- action 0000.07 set _ntp_server ""
- action 0000.08 set _log_server ""
+ action 0000.03 set _ntp_server ""
+ action 0000.04 set _log_server ""
 ```
 
 Create for each device family a section in the 0020 to 0029 range.
@@ -32,6 +33,7 @@ Each section contains
  - a list of models from this family separated by `|`
  - the name of the image file for this device family
  - the IOS(XE) version the device should be running
+
 ```
  !
  action 0020.05 string first "|$_model|" "|WS-C3560CG-12TC-S|WS-C3560CG-8TC-S|"
@@ -57,7 +59,7 @@ ip dhcp pool autoinstall
 !
 ```
 
-You can use an IOS/IOS-XE switch to deliver the autoinstall script like this.
+You can use an IOS/IOS-XE switch to deliver the autoinstall script like this. `192.168.10.1` is the IP-address of the switch
 
 ```
 tftp-server flash:/autoinstall.txt
