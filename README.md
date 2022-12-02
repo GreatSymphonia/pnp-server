@@ -34,13 +34,14 @@ Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contribut
 ---
 ### Autoinstall
 
-With [**_autoinstall_**](/autoinstall/README.md) you can update a new devices to your desired software image. This is intended to use with a lot of identical devices (from one product family), where you just want them to get updated without any manual intervention. There is no device configuration included,
+With [**_autoinstall_**](/autoinstall/README.md) you can update lot of different devices at the same time in a fully automated way. The devices can be IOS or IOS-XE devices cababil of running EEM scripts.
 
 ---
 ### ZTP
 
-With [**_ZTP_**](/ztp/README.md) you can update and configure a lot of different devices at the same time in a fully automated way. ZTP uses the day0 pyton guest shell.
+With [**_ZTP_**](/ztp/README.md) you can update and configure a lot of different devices at the same time in a fully automated way. ZTP uses the day0 pyton guest shell on IOS-XE devices.
 
 ---
 ### PnP
 
+not yet implemented.
