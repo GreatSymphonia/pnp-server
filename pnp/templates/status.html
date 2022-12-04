@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="{{ refresh }}">
+    <style>
+        table { border-spacing: 0; }
+        tr:nth-child(even) { background-color: #D6EEEE; }
+        td {
+            border: 1px solid #555555;
+            padding: 5px;
+        }
+        th {
+            border: 1px solid #555555;
+            padding: 5px;
+        }
+        input { width: 70px; }
+
+
+    </style>
+</head>
+<body>
+<h1>PnP Day0 status page</h1>
+<table>
+    <tr>
+        <th>Action</th>
+        <th>Serial number</th>
+        <td>First seen</td>
+        <th>Last contact</th>
+        <th>Device IP</th>
+        <th>State</th>
+        <th>Current job</th>
+        <th>Platform</th>
+        <th>HW rev.</th>
+        <th>Current<br>version</th>
+        <th>Target<br>version</th>
+        <th>Current image</th>
+        <th>Target image</th>
+        <th>Size</th>
+        <th>Free space</th>
+        <th>Destination</th>
+        <th>Last error</th>
+        <th>Backoff<br>count</th>
+    </tr>
+    {% for device in devices %}
+    <tr>
+        <td>
+            <form method="post" action="/buttons">
+                <input type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>
+            </form>
+              <form method="post" action="/buttons">
+                <input type="submit" value="Remove" name="{{ device.udi }}"/>
+            </form>
+        </td>
+        <td>{{ device.serial }}</td>
+        <td>{{ device.first_seen }}</td>
+        <td>{{ device.last_contact }}</td>
+        <td>{{ device.src_address }}</td>
+        <td>{{ device.state_readable }}</td>
+        <td>{{ device.current_job }}</td>
+        <td>{{ device.platform }}</td>
+        <td>{{ device.hw_rev }}</td>
+        <td>{{ device.version }}</td>
+        <td>{{ device.target_image.version }}</td>
+        <td>{{ device.image }}</td>
+        <td>{{ device.target_image.image }}</td>
+        <td>{{ device.target_image.size }}</td>
+        <td>{{ device.destination_free }}</td>
+        <td>{{ device.destination_name }}</td>
+        <td>{{ device.last_error }}</td>
+        <td>{{ device.backoff_count }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
+
+

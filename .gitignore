@@ -5,6 +5,17 @@
 # python virtual environment
 .venv
 
+# pycharm
+.idea
+
+# config files
+pnp/configs/*.cfg
+# image files
+pnp/images/*.bin
+
+# pychache
+__pycache__
+
 ### Linux ###
 *~
 

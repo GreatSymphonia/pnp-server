@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnp udi="{{ udi }}" version="1.0" xmlns="urn:cisco:pnp">
+    <request correlator="{{ correlator_id }}" xmlns="urn:cisco:pnp:image-install">
+        <image>
+            <copy>
+                <source>
+                    <location>http://{{ http_server }}/{{ image }}</location>
+                    <checksum>{{ md5 }}</checksum>
+                </source>
+                <destination>
+                    <location>{{ destination }}:{{ image }}</location>
+                </destination>
+            </copy>
+        </image>
+        <reload>
+            <reason>pnp image installation</reason>
+            <delayIn>{{ delay }}</delayIn>
+            <user>pnp-install-image</user>
+            <saveConfig>true</saveConfig>
+        </reload>
+    </request>
+</pnp>
