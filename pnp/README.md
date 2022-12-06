@@ -19,14 +19,14 @@ ASR routers and so on.
 ## How to use
 
 ### IOS-XE Images
-Place the IOS-XE images on a HTTP server where the new device can download them.
+Place the IOS-XE images on a HTTP server where the new devices can download them.
 
 ### Configuration files
-Create for ach device a configuration file named SERIALNUMBER.cfg. i.e.: `FCZ094210DS.cfg`. Place the configuration files also on an HTTP server so the new devices can download them. 
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: `FCZ094210DS.cfg`. Place the configuration files also on an HTTP server so the new devices can download them. 
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
-**Note**: the PnP server runs on HTTP. So there is no encryption for the configuration files as the are dwonloaded by the new devices.
+**Note**: the PnP server runs on HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
 
 ### Install the PnP server:
 
@@ -59,18 +59,20 @@ You can check if the PnP server is running by opening a webbrowser and accessing
 
 `http://<your-ip>:8080/status`
 
+![open PnP server status](sample-pnp-status-png)
+
 
 ### Configure the PnP server
 
 to use the PnP server you need to configure the server by modifying the 
 
-- vars.py
-- images.py
-- platforms.py 
+- [**_vars.py_**](/pnp/vars/vars.py)
+- [**_images.py_**](/pnp/vars/images.py)
+- [**_platforms.py_**](/pnp/vars/platforms.py)
 
 files in the `vars` subbdirectory.
 
-**Note**: after changing the PnP server configuration you need to restart teh PnP server.
+**Note**: after changing the PnP server configuration you need to restart the PnP server.
 
 #### Global variables in [**_vars.py_**](/pnp/vars/vars.py)
 
@@ -85,21 +87,21 @@ FLASK_DEBUG = False
 ```
 
 - **BIND_PNP_SERVER**: the IP-adress of your python box
-- **PORT**: the TCP port the server should listen (rember for port 80 the server needs to run as root)
+- **PORT**: the TCP port the server should listen on (rember for port 80 the server needs to run as root)
 - **TIME_FORMAT**: the time format used in the status page
-- **STATUS_REFRESH**: the intervall the status page will automatically reload
-- **IMAGE_BASE_URL**: the base URL for your images
-- **CONFIG_BASE_URL**: the base URL for your configuration files
+- **STATUS_REFRESH**: the intervall in seconds the status page will automatically reload
+- **IMAGE_BASE_URL**: the base URL for your images (without `/` at the end)
+- **CONFIG_BASE_URL**: the base URL for your configuration files (without `/` at the end)
 - **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
 
 #### _IMAGES_ dictionary in [**_images.py_**](/pnp/vars/images.py)
 
-Each entry in the _software_images_ dictionary contains
+Each entry in the _IMAGES_ dictionary contains
 - a unique name, i.e., the product family + version
-- the name of the image file
+- the name of the IOS-XE image file
 - the IOS-XE version of the image
-- the md5 sum of the image file
-- (optional) if install mode is required or not
+- the md5 sum of the IOS-XE image file
+- the size of the IOS-XE image file in bytes
 
 ```
 'C1100_17_06_04': SoftwareImage(
@@ -124,7 +126,9 @@ Each entry in the _PLATFORMS_ dictionary contains
 ```
 
 ### PnP server discovery
-An IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Where _your.domain_ will be replaced by the DNS domain the dievice recives via DHCP. In case of DHCP, the DHCP server needs to send the vendor option 43.
+The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Where _your.domain_ will be replaced by the DNS domain the device receives via DHCP. With DHCP, the DHCP server needs to send the vendor option 43.
+
+Structure of DHCP option 43:
 
 - 5: DHCP sub-option for PnP
 - A: feature-code for Active
