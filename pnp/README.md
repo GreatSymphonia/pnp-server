@@ -22,7 +22,7 @@ ASR routers and so on.
 Place the IOS-XE images on a HTTP server where the new devices can download them.
 
 ### Configuration files
-Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: `FCZ094210DS.cfg`. Place the configuration files also on an HTTP server so the new devices can download them. 
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on an HTTP server so the new devices can download them. 
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
