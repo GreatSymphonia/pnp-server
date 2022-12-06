@@ -151,4 +151,4 @@ You can monitor the PnP progress on the PnP server status page.
 
 ![Pnp server status page](sample-pnp-status.png)
 
-**Hint** you can change the status aoutput by modifing the **_status.html_** file in the templates subdirectory.
+**Hint** you can change the status page output by modifying the **_status.html_** file in the templates subdirectory.
