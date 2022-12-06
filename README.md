@@ -39,9 +39,9 @@ With [**_autoinstall_**](/autoinstall/) you can update and configury many differ
 ---
 ### ZTP
 
-With [**_ZTP_**](/ztp/) you can update and configure a many of different devices at the same time in a fully automated way. ZTP uses the **day0 pyton guest shell** on **IOS-XE** devices.
+With [**_ZTP_**](/ztp/) you can update and configure many of different devices at the same time in a fully automated way. ZTP uses the **day0 pyton guest shell** on **IOS-XE** devices.
 
 ---
 ### PnP
 
-With [**_PnP_**](/pnp/) you can update and configure a many of different devices at the same time in a fully automated way. PnP uses the Cisco Plug and Play protocol.
+With [**_PnP_**](/pnp/) you can update and configure many of different devices at the same time in a fully automated way. PnP uses the Cisco Plug and Play protocol. This available on most(?) **IOS-XE** devices.
