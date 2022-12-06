@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnp xmlns="urn:cisco:pnp" version="1.0" udi="{{ udi }}">
+    <request xmlns="urn:cisco:pnp:backoff" correlator="{{ correlator }}">
+        <backoff>
+            <reason>backoffNow</reason>
+            <terminate/>
+        </backoff>
+    </request>
+</pnp>
+

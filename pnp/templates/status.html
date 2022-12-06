@@ -3,7 +3,7 @@
 <head>
     <meta http-equiv="refresh" content="{{ refresh }}">
     <style>
-        table { border-spacing: 0; }
+        table { border-spacing: 0; width: 100%}
         tr:nth-child(even) { background-color: #D6EEEE; }
         td {
             border: 1px solid #555555;
@@ -24,13 +24,14 @@
     <tr>
         <th>Action</th>
         <th>Serial number</th>
-        <td>First seen</td>
-        <th>Last contact</th>
-        <th>Device IP</th>
-        <th>State</th>
-        <th>Current job</th>
         <th>Platform</th>
         <th>HW rev.</th>
+        <th>Device IP</th>
+        <th>PnP Flow</th>
+        <th>Status</th>
+        <td>First seen</td>
+        <th>Last contact</th>
+        <th>Current job</th>
         <th>Current<br>version</th>
         <th>Target<br>version</th>
         <th>Current image</th>
@@ -39,6 +40,8 @@
         <th>Free space</th>
         <th>Destination</th>
         <th>Last error</th>
+        <th>Error<br>count</th>
+        <th>Hard<br>error</th>
         <th>Backoff<br>count</th>
     </tr>
     {% for device in devices %}
@@ -52,13 +55,14 @@
             </form>
         </td>
         <td>{{ device.serial }}</td>
-        <td>{{ device.first_seen }}</td>
-        <td>{{ device.last_contact }}</td>
-        <td>{{ device.src_address }}</td>
-        <td>{{ device.state_readable }}</td>
-        <td>{{ device.current_job }}</td>
         <td>{{ device.platform }}</td>
         <td>{{ device.hw_rev }}</td>
+        <td>{{ device.src_address }}</td>
+        <td>{{ device.pnp_flow_readable }}</td>
+        <td>{{ device.status }} </td>
+        <td>{{ device.first_seen }}</td>
+        <td>{{ device.last_contact }}</td>
+        <td>{{ device.current_job }}</td>
         <td>{{ device.version }}</td>
         <td>{{ device.target_image.version }}</td>
         <td>{{ device.image }}</td>
@@ -66,11 +70,18 @@
         <td>{{ device.target_image.size }}</td>
         <td>{{ device.destination_free }}</td>
         <td>{{ device.destination_name }}</td>
-        <td>{{ device.last_error }}</td>
-        <td>{{ device.backoff_count }}</td>
+        <td>{{ device.error_code_readable }}</td>
+        <td>{{ device.error_count }}</td>
+        <td>{{ device.hard_error }}</td>
+        <td>{{ device.backoff }}</td>
     </tr>
     {% endfor %}
 </table>
+<footer>
+    <br><br>
+    <p>Written by: <a href="mailto:thl-cmk@outlook.com,">thl-cmk</a> | Date: 2022-12-05 | for more information see
+        <a href="https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision">Cisco Day0 provision</a> </p>
+</footer>
 </body>
 </html>
 

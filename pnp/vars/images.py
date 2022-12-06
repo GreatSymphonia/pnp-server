@@ -39,7 +39,6 @@ IMAGES = {
         version='17.2.3',
         md5='4986d253b333d21b1b80c76f6d2267ca',
         size=589675224,
-        # size=5896752240000,
     ),
     'C1100_17_03': SoftwareImage(
         image='c1100-universalk9.17.03.05.SPA.bin',

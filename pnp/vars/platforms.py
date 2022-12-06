@@ -17,6 +17,7 @@ PLATFORMS = {
         image='ASR1000',
     ),
     'C1117-4PMLTEEAWE': Model(
-        image='C1100_16_12',
+        # image='C1100_17_01',
+        image='C1100_17_09',
     ),
 }

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pnp udi="{{ udi }}" version="1.0" xmlns="urn:cisco:pnp">
-    <request correlator="{{ correlator_id }}" xmlns="urn:cisco:pnp:image-install">
+    <request correlator="{{ correlator }}" xmlns="urn:cisco:pnp:image-install">
         <image>
             <copy>
                 <source>
-                    <location>http://{{ http_server }}/{{ image }}</location>
+                    <location>{{ base_url }}/{{ image }}</location>
                     <checksum>{{ md5 }}</checksum>
                 </source>
                 <destination>

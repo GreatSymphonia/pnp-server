@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnp xmlns="urn:cisco:pnp" version="1.0" udi="{{ udi }}">
+    <request correlator="{{ correlator }}" xmlns="urn:cisco:pnp:config-upgrade">
+        <config details="all">
+            <copy>
+                <source>
+                    <location>{{ base_url }}/{{ serial_number }}.cfg</location>
+                </source>
+            </copy>
+            <!-- <applyto>startup</applyto> -->  <!-- don't now where to place this -->
+            <!-- <abortonsyntaxfault/> -->       <!-- don't now where to place this -->
+        </config>
+        <reload>
+            <reason>pnp device config</reason>
+            <delayIn>{{ delay }}</delayIn>
+            <user>pnp-device-config</user>
+            <saveConfig>true</saveConfig>
+        </reload>
+<!--        <noReload/>-->
+    </request>
+</pnp>

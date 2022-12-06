@@ -5,7 +5,7 @@
 #
 # Author: thl-cmk[at]outlook[dot]com
 # URL   : https://thl-cmk.hopto.org
-# Date  : 2022-12-03
+# Date  : 2022-12-05
 # File  : open-pnp.py
 #
 # Basic Cisco PnP server for Day0 provisioning
@@ -16,12 +16,13 @@
 #
 
 import re
-from flask import Flask, request, send_from_directory, render_template, Response, redirect
+from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
 from pathlib import Path
 import sys
 import xmltodict
 import time
 from typing import Optional
+import logging
 
 BIND_PNP_SERVER = '0.0.0.0'
 PORT = 8080
@@ -29,6 +30,8 @@ TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
 STATUS_REFRESH = 10
 IMAGE_BASE_URL = ''
 CONFIG_BASE_URL = ''
+FLASK_DEBUG = False
+
 IMAGES = {}
 PLATFORMS = {}
 
@@ -42,36 +45,79 @@ except ModuleNotFoundError:
     pass
 
 
-class State:
-    __state_desc = {
-        0: 'new device',
-        1: 'info',
-
-        10: 'update needed',
-        11: 'update stated',
-        12: 'update done/not needed',
-        13: 'reload for image update',
-
+class ErrorCodes:
+    __readable = {
+        0: 'No error',
         100: 'unknown platform',
         101: 'no free space for update',
         102: 'unknown image',
+
+        1413: 'Invalid input detected',
+        1609: 'Error while retrieving device filesystem info',
+        1816: 'Error verifying checksum for Image',
+        1829: 'Image copy was unsuccessful',
+        1803: 'Source file not found',
     }
 
     def __init__(self):
-        self.NEW = 0
-        self.INFO = 1
+        self.ERROR_NO_ERROR = 0
+
+        self.ERROR_NO_PLATFORM = 100
+        self.ERROR_NO_FREE_SPACE = 101
+        self.ERROR_NO_IMAGE = 102
+
+        self.PNP_ERROR_INVALID_INPUT = 1413
+        self.PNP_ERROR_NO_FILESYSTEM_INFO = 1609
+        self.PNP_ERROR_BAD_CHECKSUM = 1816
+        self.PNP_ERROR_IMAGE_COPY_UNSUCCESSFUL = 1829
+        self.PNP_ERROR_FILE_NOT_FOUND = 1803
+
+    def readable(self, error_code: int):
+        return self.__readable.get(error_code, f'unknown: {error_code}')
+
+
+ERROR = ErrorCodes()
+
+
+class PnpFlow:
+    __readable = {
+        0: 'None',
+        1: 'new device',
+        2: 'info',
+
+        10: 'image update needed',
+        11: 'image update stated',
+        12: 'image update done/not needed',
+        13: 'reload for image update',
+
+        21: 'config update start',
+        22: 'config update down',
+        23: 'reload for config update',
+
+        99: 'finished',
+    }
+
+    def __init__(self):
+        self.NONE = 0
+        self.NEW = 1
+        self.INFO = 2
 
         self.UPDATE_NEEDED = 10
         self.UPDATE_START = 11
         self.UPDATE_DOWN = 12
         self.UPDATE_RELOAD = 13
 
-        self.ERROR_NO_PLATFORM = 100
-        self.ERROR_NO_FREE_SPACE = 101
-        self.ERROR_NO_IMAGE = 102
+        self.CONFIG_START = 21
+        self.CONFIG_DOWN = 22
+        self.CONFIG_RELOAD = 23
 
-    def state_readable(self, state: int):
-        return self.__state_desc.get(state, 'unknown')
+        self.FINISHED = 99
+
+    def readable(self, state: int):
+        return self.__readable.get(state, 'unknown')
+
+
+PNPFLOW = PnpFlow()
 
 
 class Device:
@@ -91,22 +137,25 @@ class Device:
         self.image: str = ''
         self.destination_name: str = ''
         self.destination_free: int = 0
-        self.__state: int = 0
-        self.state_readable: str = State().state_readable(0)
-        self.error: str = ''
+        self.__pnp_flow: int = PNPFLOW.NEW
+        self.pnp_flow_readable: str = PNPFLOW.readable(PNPFLOW.NEW)
         self.target_image: Optional[SoftwareImage] = None
-        self.backoff_count: int = 0
+        self.backoff: bool = False
         self.__refresh_data: bool = False
         self.refresh_button: str = ''
+        self.__error_code: int = 0
+        self.error_code_readable: str = ERROR.readable(ERROR.ERROR_NO_ERROR)
+        self.error_count: int = 0
+        self.hard_error: bool = False
 
     @property
-    def state(self) -> int:
-        return self.__state
+    def pnp_flow(self) -> int:
+        return self.__pnp_flow
 
-    @state.setter
-    def state(self, new_state: int):
-        self.__state = new_state
-        self.state_readable = State().state_readable(self.__state)
+    @pnp_flow.setter
+    def pnp_flow(self, pnp_flow: int):
+        self.__pnp_flow = pnp_flow
+        self.pnp_flow_readable = PNPFLOW.readable(pnp_flow)
 
     @property
     def refresh_data(self) -> bool:
@@ -120,71 +169,106 @@ class Device:
         else:
             self.refresh_button = 'enabled='
 
+    @property
+    def error_code(self) -> int:
+        return self.__error_code
+
+    @error_code.setter
+    def error_code(self, error_code: int):
+        self.__error_code = error_code
+        self.state_readable = ERROR.readable(error_code)
+
 
 app = Flask(__name__, template_folder='./templates')
-app.debug = True
+if FLASK_DEBUG:
+    app.debug = True
+else:
+    # disable FLASK console output
+    logging.getLogger("werkzeug").disabled = True
+    cli.show_server_banner = lambda *args: None
+
 
 current_dir = Path(__file__)
 devices: [str, Device] = {}
 
 
-def get_device_info(udi: str, correlator_id: str, info_type: str) -> str:
+def device_info(udi: str, correlator: str, info_type: str) -> str:
     # info_type can be one of:
     # image, hardware, filesystem, udi, profile, all
     if devices[udi].current_job != 'urn:cisco:pnp:image-install':
         devices[udi].current_job = 'urn:cisco:pnp:device-info'
     jinja_context = {
         'udi': udi,
-        'correlator_id': correlator_id,
+        'correlator': correlator,
         'info_type': info_type
     }
     return render_template('device_info.xml', **jinja_context)
 
 
-def back_off(udi: str, correlator_id: str) -> str:
-    # seconds min: 0, max: 59
-    backoff_seconds = 59
-    devices[udi].status = f'back off {backoff_seconds}s'
+def backoff(udi: str, correlator: str, minutes: Optional[int] = 2) -> str:
+    seconds = 0
+    hours = 0
+    devices[udi].status = f'backoff for {hours:02d}:{minutes:02d}:{seconds:02d}'
     devices[udi].current_job = 'urn:cisco:pnp:backoff'
+    devices[udi].backoff = False
     jinja_context = {
         'udi': udi,
-        'correlator_id': correlator_id,
-        'seconds': backoff_seconds
+        'correlator': correlator,
+        'seconds': seconds,
+        'minutes': minutes,
+        'hours': hours,
     }
     return render_template('backoff.xml', **jinja_context)
 
 
-def install_image(udi: str, correlator_id: str) -> str:
+# will not be used as we remove PNP via EEM. PNP terminate is missing a "write mem"
+def backoff_terminate(udi: str, correlator: str) -> str:
+    devices[udi].status = f'finished'
+    devices[udi].pnp_floe = PNPFLOW.FINISHED
+    devices[udi].current_job = 'urn:cisco:pnp:backoff-terminate'
+    jinja_context = {
+        'udi': udi,
+        'correlator': correlator,
+    }
+    return render_template('backoff_terminate.xml', **jinja_context)
+
+
+def install_image(udi: str, correlator: str) -> str:
     device = devices[udi]
     device.current_job = 'urn:cisco:pnp:image-install'
-    device.state = State().UPDATE_START
+    device.pnp_flow = PNPFLOW.UPDATE_START
+    device.backoff = True
     device.refresh_data = True
     jinja_context = {
         'udi': udi,
-        'correlator_id': correlator_id,
-        'http_server': IMAGE_BASE_URL,
+        'correlator': correlator,
+        'base_url': IMAGE_BASE_URL,
         'image': device.target_image.image,
         'md5': device.target_image.md5,
         'destination': device.destination_name,
         'delay': 0,  # seconds
     }
-    return render_template('image.xml', **jinja_context)
+    return render_template('image_install.xml', **jinja_context)
 
 
-def load_config(udi: str, correlator_id: str, serial_number: str) -> str:
+def config_upgrade(udi: str, correlator: str) -> str:
+    device = devices[udi]
+    device.current_job = 'urn:cisco:pnp:device-info'
+    device.pnp_flow = PNPFLOW.CONFIG_START
     jinja_context = {
         'udi': udi,
-        'correlator_id': correlator_id,
-        'http_server': CONFIG_BASE_URL,
-        'serial_number': serial_number,
+        'correlator': correlator,
+        'base_url': CONFIG_BASE_URL,
+        'serial_number': device.serial,
+        'delay': 0,  # seconds
     }
-    return render_template('load_config.xml', **jinja_context)
+    return render_template('config_upgrade.xml', **jinja_context)
 
 
-def bye(udi: str, correlator_id: str) -> str:
+def bye(udi: str, correlator: str) -> str:
     jinja_context = {
         'udi': udi,
-        'correlator_id': correlator_id,
+        'correlator': correlator,
     }
     return render_template('bye.xml', **jinja_context)
 
@@ -205,16 +289,17 @@ def create_new_device(udi: str, src_add: str):
         current_job='urn:cisco:pnp:device-info',
     )
     device = devices[udi]
+    device.backoff = True
     if device.platform in PLATFORMS:
         platform = PLATFORMS[device.platform]
         if platform.image in IMAGES:
             device.target_image = IMAGES[platform.image]
         else:
-            device.last_error = 'unknown target image'
-            device.state = State().ERROR_NO_IMAGE
+            device.error_code = ERROR.ERROR_NO_IMAGE
+            device.hard_error = True
     else:
-        device.last_error = 'unknown device type'
-        device.state = State().ERROR_NO_PLATFORM
+        device.error_code = ERROR.ERROR_NO_PLATFORM
+        device.hard_error = True
 
 
 def update_device_info(data: [str, str]):
@@ -227,32 +312,26 @@ def update_device_info(data: [str, str]):
     device.image = data['pnp']['response']['imageInfo']['imageFile'].split(':')[1]
     device.refresh_data = False
     device.last_contact = time.strftime(TIME_FORMAT)
+    for filesystem in data['pnp']['response']['fileSystemList']['fileSystem']:
+        if filesystem['@name'] in ['bootflash', 'flash']:
+            destination = filesystem
 
-    if device.state == State().UPDATE_START:
-
-        if device.version == device.target_image.version:
-            device.state = State().UPDATE_DOWN
-    else:
-        for filesystem in data['pnp']['response']['fileSystemList']['fileSystem']:
-            if filesystem['@name'] in ['bootflash', 'flash']:
-                destination = filesystem
-
-        device.platform = data['pnp']['response']['hardwareInfo']['platformName']
-        device.serial = data['pnp']['response']['hardwareInfo']['boardId']
-        device.destination_name = destination['@name']
-        device.destination_free = int(destination['@freespace'])
+    device.platform = data['pnp']['response']['hardwareInfo']['platformName']
+    device.serial = data['pnp']['response']['hardwareInfo']['boardId']
+    device.destination_name = destination['@name']
+    device.destination_free = int(destination['@freespace'])
 
 
-def check_update(udi:str):
+def check_update(udi: str):
     device = devices[udi]
     if device.image == device.target_image.image:
-        device.state = State().UPDATE_DOWN
+        device.pnp_flow = PNPFLOW.UPDATE_DOWN
     else:
-        device.state = State().UPDATE_NEEDED
+        device.pnp_flow = PNPFLOW.UPDATE_NEEDED
         if device.destination_free < device.target_image.size:
             _mb = round(device.target_image.size / 1024 / 1024)
-            device.last_error = f'no space on device, need {_mb} MBytes'
-            device.state = State().ERROR_NO_FREE_SPACE
+            device.error_code = ERROR.ERROR_NO_FREE_SPACE
+            device.hard_error = True
 
 
 @app.route('/')
@@ -291,7 +370,6 @@ def buttons():
 
 @app.route('/configs/<path:path>')
 def serve_configs(path):
-    print(path)
     return send_from_directory('configs', path)
 
 
@@ -309,35 +387,44 @@ def pnp_hello():
 def pnp_work_request():
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     data = xmltodict.parse(request.data)
-    correlator_id = data['pnp']['info']['@correlator']
+    # print(f'REQUEST: {data}')
+    correlator = data['pnp']['info']['@correlator']
     udi = data['pnp']['@udi']
     if udi in devices.keys():
         device = devices[udi]
         device.last_contact = time.strftime(TIME_FORMAT)
         device.src_address = src_add
-        if device.state == State().NEW or device.refresh_data:
-            return Response(get_device_info(udi, correlator_id, 'all'), mimetype='text/xml')
-        if device.state == State().UPDATE_NEEDED:
-            return Response(install_image(udi, correlator_id), mimetype='text/xml')
-        if device.backoff_count > 0:
-            device.backoff_count -= 1
-            return Response(back_off(udi, correlator_id), mimetype='text/xml')
-        if device.state == State().UPDATE_RELOAD:
-            return Response(get_device_info(udi, correlator_id, 'all'), mimetype='text/xml')
+        if device.hard_error:
+            return Response(backoff(udi, correlator), mimetype='text/xml')
+        if device.backoff:
+            return Response(backoff(udi, correlator), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.NEW:
+            device.pnp_flow = PNPFLOW.INFO
+            return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
+            device.pnp_flow = PNPFLOW.UPDATE_START
+            return Response(install_image(udi, correlator), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
+            return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
+            return Response(config_upgrade(udi, correlator), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
+            return Response(backoff_terminate(udi, correlator), mimetype='text/xml')
         return Response('', 200)
     else:
         create_new_device(udi, src_add)
-        return Response(get_device_info(udi, correlator_id, 'all'), mimetype='text/xml')
+        # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
+        devices[udi].state = PNPFLOW.NEW
+        return Response(backoff(udi, correlator), mimetype='text/xml')
 
 
 @app.route('/pnp/WORK-RESPONSE', methods=['POST'])
 def pnp_work_response():
     data = xmltodict.parse(request.data)
+    # print(f'RESPONSE: {data}')
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     udi = data['pnp']['@udi']
     job_type = data['pnp']['response']['@xmlns']
-    correlator_id = data['pnp']['response']['@correlator']
-
     if udi not in devices.keys():
         create_new_device(udi, src_add)
 
@@ -345,27 +432,40 @@ def pnp_work_response():
     device.src_address = src_add
     device.last_contact = time.strftime(TIME_FORMAT)
 
-    if job_type == 'urn:cisco:pnp:fault':
-        print(data)
+    if job_type == 'urn:cisco:pnp:fault':  # error without job info (correlator):-(
         device.error = data['pnp']['response']['fault']['detail']['XSVC-ERR:error']['XSVC-ERR:details']
     else:
+        correlator = data['pnp']['response']['@correlator']
         job_status = int(data['pnp']['response']['@success'])
-        if job_status == 1:
+        if job_status == 1:  # success
+            if job_type != 'urn:cisco:pnp:backoff':
+                device.backoff = True
+            device.error_count = 0
             if job_type == 'urn:cisco:pnp:device-info':
-                update_device_info(data)
-                device.current_job = 'none'
-                if device.state not in [State().UPDATE_START]:
+                if device.pnp_flow in [PNPFLOW.INFO, PNPFLOW.UPDATE_RELOAD]:
+                    update_device_info(data)
                     check_update(udi)
+                else:
+                    update_device_info(data)
             elif job_type == 'urn:cisco:pnp:image-install':
-                device.state = State().UPDATE_RELOAD
-                device.backoff_count = 10
-                device.current_job = 'none'
+                device.pnp_flow = PNPFLOW.UPDATE_RELOAD
+            elif job_type == 'urn:cisco:pnp:config-upgrade':
+                # device.pnp_flow = PNPFLOW.CONFIG_DOWN  # we don't reach this as we remove PNP before via EEM
+                device.pnp_flow = PNPFLOW.FINISHED
+                device.status = 'Finished. You can remove the device from the list :-)'
             elif job_type == 'urn:cisco:pnp:backoff':
-                device.current_job = 'none'
+                pass
+            return Response(bye(udi, correlator), mimetype='text/xml')
         elif job_status == 0:
+            error_code = int(data['pnp']['response']['errorInfo']['errorCode'].split(' ')[-1])
+            device.error_count += 1
             device.last_error = data['pnp']['response']['errorInfo']['errorMessage']
-            print(data)
-    return Response(bye(udi, correlator_id), mimetype='text/xml')
+            device.error_code = error_code
+            if error_code in [ERROR.PNP_ERROR_BAD_CHECKSUM, ERROR.PNP_ERROR_FILE_NOT_FOUND]:
+                device.hard_error = True
+            return Response(bye(udi, correlator), mimetype='text/xml')
+    device.current_job = 'none'
+    return Response('', 200)
 
 
 if __name__ == '__main__':
@@ -376,4 +476,5 @@ if __name__ == '__main__':
         print('CONFIG_BASE_URL not set, check ./vars/vars.py')
         exit(1)
 
+    print('runnig PnP server. Stop with ctrl+c')
     app.run(host=BIND_PNP_SERVER, port=PORT)

@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pnp xmlns="urn:cisco:pnp" version="1.0" udi="{{ udi }}">
-    <request xmlns="urn:cisco:pnp:backoff" correlator="{{ correlator_id }}">
-        <reload>
-            <reason>pnp image installation</reason>
-            <delayIn>{{ delay }}</delayIn>
-            <user>pnp-install-image</user>
-            <saveConfig>true</saveConfig>
-        </reload>
+    <request xmlns="urn:cisco:pnp:backoff" correlator="{{ correlator }}">
+        <backoff>
+            <reason>backoffNow</reason>
+<!--            <defaultMinutes>{{ minutes }}</defaultMinutes>-->
+<!--            <terminate/>-->
+            <callbackAfter>
+                <seconds>{{ seconds }}</seconds>
+                 <minutes>{{ minutes }}</minutes>
+                 <hours>{{ hours }}</hours>
+            </callbackAfter>
+        </backoff>
     </request>
 </pnp>
+
