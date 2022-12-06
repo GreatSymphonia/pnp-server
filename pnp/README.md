@@ -145,6 +145,10 @@ ip dhcp pool autoinstall
 ```
 For more details on PnP server dicovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
 
-### Health Monitoring
+### PnP Status page
 
 You can monitor the PnP progress on the PnP server status page.
+
+![Pnp server status page](sample-pnp-status.png)
+
+**Hint** you can change the status aoutput by modifing the **_status.html_** file in the templates subdirectory.
