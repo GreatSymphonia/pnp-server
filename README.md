@@ -37,11 +37,11 @@ Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contribut
 With [**_autoinstall_**](/autoinstall/) you can update and configury many different devices at the same time in a fully automated way. The devices can be **IOS or IOS-XE** devices able of running **EEM** scripts.
 
 ---
-### ZTP
+### ZTP (Zero Touch Provisioning)
 
 With [**_ZTP_**](/ztp/) you can update and configure many of different devices at the same time in a fully automated way. ZTP uses the **day0 pyton guest shell** on **IOS-XE** devices.
 
 ---
-### PnP
+### PnP (Plug and Play)
 
 With [**_PnP_**](/pnp/) you can update and configure many of different devices at the same time in a fully automated way. PnP uses the Cisco Plug and Play protocol. This available on most(?) **IOS-XE** devices.
