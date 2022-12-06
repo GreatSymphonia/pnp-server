@@ -1,41 +1,98 @@
-# Zero Touch Provisioning (ZTP) for IOS XE based devices 
+# Plug and Play (PnP) server for IOS XE based devices 
 
 # Introduction
 
 This is a basic implementation of the Cisco Plug and Play protocol, to fully automate the day0 provisioning of Cisco IOS-XE devices.
 
 ### Acknowledgment 
-This project is based on  https://github.com/
+This project is based on https://github.com/oliverl-21/Open-PnP-Server
 
-- 
 
 ## Prerequisites
 
 - Your devices need to be PnP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
 ASR routers and so on.
-- a file server to store the images, config files and the ztp script (recommended is an HTTP server)  
-- a DHCP server to provide IP configuration and option 43 to the new devices 
-
-**Note:** there needs to be one config file for each device with the name SERIALNUMBER.cfg. SERIALNUMBER needs to be 
-replaced by the exact serial number of the device.
-**Note:** HTTP-based download of ZTP Python script available as of 16.8.1.
-**Note:** ZTP not supported in IOS XE 16.12.4 due to a defect.
+- a HTTP server to store the images and config files
+- a DHCP server to provide IP configuration and option 43 to the new devices (or DNS)
+- an python 3.x environment to run this PnP server
 
 ## How to use
 
-Modify the [**_ztp.py_**](ztp.py) script for your needs.
+### IOS-XE Images
+Place the IOS-XE images on a HTTP server where the new device can download them.
 
-- you need to modify the _software_images_ dictionary to contain all the images you want to use.
-- you need to modify the _models_ dictionary to have one entry for all device models you have pointing to the correct 
-  entry in the _software_images_ dictionary
-- set the global variables
+### Configuration files
+Create for ach device a configuration file named SERIALNUMBER.cfg. i.e.: `FCZ094210DS.cfg`. Place the configuration files also on an HTTP server so the new devices can download them. 
 
-Second place this script, the image(s) and configuration files on a file server where the new device(s) can download 
-them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP. You can [follow the process on the console](sample_output.md), but dont touch anything.
+**Hint**: you can use different HTTP servers for the images and the configuration files
 
-**Note:** To speed up the image transfer, put the image on an USB stick and connect them to the new device. The script will first look on `usb0:` to find the image file before downloding it from the file server.
+**Note**: the PnP server runs on HTTP. So there is no encryption for the configuration files as the are dwonloaded by the new devices.
 
-### _software_images_ dictionary
+### Install the PnP server:
+
+```
+# clone the git repository
+~/: git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
+
+# got to the pnp subproject
+~/: cd cisco_day0_provision/pnp
+
+# create a python virtual environment (optional)
+~/cisco_day0_provision/pnp$ python3.8 -m venv .venv
+
+# activate the environment
+~/cisco_day0_provision/pnp$ source .venv/bin/activate
+
+# update pip (oprional)
+(.venv) :~/cisco_day0_provision/pnp$ pip3 install -U pip
+
+# install the required pyton packages
+(.venv) :~/cisco_day0_provision/pnp$pip3 install -r requirements.txt
+
+# run the pnp server
+(.venv) :~/cisco_day0_provision/pnp$ python3.8 open-pnp.py 
+runnig PnP server. Stop with ctrl+c
+
+```
+
+You can check if the PnP server is running by opening a webbrowser and accessing the status page of the pnp server
+
+`http://<your-ip>:8080/status`
+
+
+### Configure the PnP server
+
+to use the PnP server you need to configure the server by modifying the 
+
+- vars.py
+- images.py
+- platforms.py 
+
+files in the `vars` subbdirectory.
+
+**Note**: after changing the PnP server configuration you need to restart teh PnP server.
+
+#### Global variables in vars.py
+
+```
+BIND_PNP_SERVER = '0.0.0.0'
+PORT = 8080
+TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
+STATUS_REFRESH = 60
+IMAGE_BASE_URL = 'http://192.168.10.15'
+CONFIG_BASE_URL = 'http://192.168.10.15'
+FLASK_DEBUG = False
+```
+
+- **BIND_PNP_SERVER**: the IP-adress of your python box
+- **PORT**: the TCP port the server should listen (rember for port 80 the server needs to run as root)
+- **TIME_FORMAT**: the time format used in the status page
+- **STATUS_REFRESH**: the intervall the status page will automatically reload
+- **IMAGE_BASE_URL**: the base URL for your images
+- **CONFIG_BASE_URL**: the base URL for your configuration files
+- **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
+
+#### _IMAGES_ dictionary in images.py
 
 Each entry in the _software_images_ dictionary contains
 - a unique name, i.e., the product family + version
@@ -44,149 +101,50 @@ Each entry in the _software_images_ dictionary contains
 - the md5 sum of the image file
 - (optional) if install mode is required or not
 
-
 ```
-'C1100_17_06_03': SoftwareImage(
+'C1100_17_06_04': SoftwareImage(
     image='c1100-universalk9.17.06.04.SPA.bin',
     version='17.06.04',
     md5_image='2caa962f5ed0ecc52f99b90c733c54de',
     install_mode=True
+    size=651402492,
 )
 ```
 
-### _models_ dictionary
+#### _PLATFORMS_ dictionary in platforms.py
 
-Each entry in the _models_ dictionary contains
-- a unique name that exactly matches the model name of the device
-- a pointer to the image for this model in the _software_images_ dictionary
-- (optional) if install mode is required or not
-
+Each entry in the _PLATFORMS_ dictionary contains
+- a unique name that exactly matches the model name (PID) of the device
+- a pointer to the image for this model in the _IMAGES_ dictionary
 
 ```
 'C1117-4PMLTEEAWE': Model(
     image='C1100_17_06_04',
-    model='C1117-4PMLTEEAWE',
-    install_mode=False,
 )
 ```
 
-### global variables
+### PnP server discovery
+An IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Where _your.domain_ will be replaced by the DNS domain the dievice recives via DHCP. In case of DHCP, the DHCP server needs to send the vendor option 43.
 
-- _http_image_: the ip address of the HTTP server, where your images are stored
-- _http_config_: the ip address of the HTTP server, where your config files are stored
-- _ntp_server_:  the ip address of your NTP to synchronize time stamps of log messages (disable with 'ntp_server=None')
-- _syslog_server_: the ip address of yor syslog server (disable with 'syslog_server=None')
-- _console_log_level_: the log level on the console, default is `emergencies` for a clean output
-- _log_to_file_: set to `False` to disable the creation of a logfile (default is `True`). The logfile is under `flash:/guest-share/ztp.log`.
-- _switch_to_install_mode_: set to `False` to use bundle mode by default, can be overridden in _models_/_software_images_ on the model or image level
-- _verbose_: if set to `True` the script will show each single exec/config command on the console by using 
-  `executep`/`configurep` insted of `execute`/`configure` 
-
-Sample global variables section
-```    
-http_image = '192.168.10.15'
-http_config = '192.168.10.15'
-ntp_server = '10.10.10.1'
-syslog_server = '10.10.10.1'
-console_log_level = 'emergencies'
-log_to_file = True
-switch_to_install_mode = True
-verbose = False
-```    
-
-## Deployment
-When an XE device boots and there is no config and when DHCP provides option 67 with this python file from repo, 
-it will be automatically downloaded to device and gets executed.
-
-### DHCP Server
-A DHCP server is required for ZTP, as this is how the device learns about where to find the Python configuration file 
-from. In our case, the DHCP server is the open source ISC DHCPd and the configuration file is at /etc/dhcp/dhcpd.conf 
-in a Linux developer box. The option bootfile-name is also known as option 67 and it specifies the python file ztp.py
+- 5: DHCP sub-option for PnP
+- A: feature-code for Active
+- 1: Version
+- D: Debug On
+- K: Defines the Transport Protocol as 4 = HTTP
+- B: Defines the Server Adress as 2 = IPv4
+- I: is your Server IP
+- J: is your Server Port
 
 Here a sample how to do this on an IOS/IOS-XE switch.
 ```
 ip dhcp pool autoinstall
  network 192.168.10.0 255.255.255.0
  default-router 192.168.10.1
- option 67 ascii http://192.168.10.15/ztp.py
+ option 43 ascii 5A;K4;B2;I192.168.10.15;J8080
  lease 0 2
 ```
-
-Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for your use. 
-```    
-    option domain-name "lab_name";
-    default-lease-time 600;
-    max-lease-time 7200;
-    ddns-update-style none;
-    authoritative;
-    subnet x.x.x.x netmask x.x.x.x {
-    range 10.1.1.150 10.1.1.159;
-    option domain-name "";
-    option domain-name-servers x.x.x.x;
-    option subnet-mask x.x.x.x;
-    option broadcast-address 1x.x.x.x;
-    option routers x.x.x.x;
-    option ntp-servers x.x.x.x;
-    default-lease-time 600000;
-    max-lease-time 720000;
-
-    class "C9300-24T" { match if substring (option vendor-class-identifier,0,15) = "\tC9300-24T"; }
-    
-      pool {
-        allow members of "C9300-24T";
-        deny members of "ciscopnp";
-        range x.x.x.x x.x.x.x;
-        option bootfile-name "http://x.x.x.x/ztp.py";
-      }
-```
-
-#### Useful DHCP commands 
-cat /etc/dhcp/dhcpd.conf | grep bootfile-name
-
-Example for DHCP Option 67 bootfile-name with HTTP:
-option bootfile-name "http://x.x.x.x/ztp.py";
-
-ps xa |grep dhcpd
-
-tail -F /var/log/dhcpd.log &
-
-In our case the Python file for ZTP is called ztp.py and is hosted at the webserver root directory which is set 
-within the Apache webserver configuration.
-
-### Web Server
-ZTP accesses the python configuration file from HTTP or TFTP server(In our case we use HTTP).
-Before running ZTP check that the Apache HTTPD server is running with the following commands, this will follow the log 
-file from the webserver so you will see when the file is accessed.
-
-ps xa | grep httpd
-
-tail -F /var/log/httpd/access_log & 
-
-### What this python script (from this repo) do? 
-
-- Gets downloaded automatically to the device.
-- Start execution in the guest shell.
-- Logs ZTP process to persistent storage on the device flash for failure analysis.
-- checks if upgrade/downgrade required and takes appropriate action.
-- If upgrade required, transfers image from http server to device flash. 
-- upgrades the device
-- removes any old images 
-- (optional) switches from bundle mode to install mode
-- Pushes the entire golden config or a partial config.
-- Notifies user of success/failure on both CLI prompt and logs.
-
-## Support Information
-
-- GuestShell/ZTP needs 1.1GB free space on bootflash.  May be unable to launch GuestShell to execute ZTP if < 1.1 GB 
-  is free on bootflash.
-- Md5 checksum will fail on IOSXE V16.6 and V16.7 due to known issue , so the script will bypass that MD5 checksum on 
-  that specific versions and continue with the rest of the workflow
-- On 16.6.x and 16.7.x  ZTP If image file transfer need to happen , it *might* intermittently fail for first time and 
-  ZTP could report fail ,but an *automatic* re attempt will be done and it should be successful in the subsequent 
-  attempt.
+For more details on PnP server dicovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
 
 ### Health Monitoring
 
-Log Files from running this Python Script are enabled by default , Logging can be disabled by setting the flag 
-log_tofile = False in the script. On IOS XE 17.2.x and above log files are stored at '/flash/guest-share/ztp.log'. 
-In all other version logs will be located at '/flash/ztp.log'
+You can monitor the PnP progress on the PnP server status page.
