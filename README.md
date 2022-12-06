@@ -8,9 +8,9 @@ state with minimal to no-touch. Hence the name Zero touch. The goal of Zero touc
 network device and have it configured and transitioned into production automatically without the need for manual 
 configuration. For this purpose Cisco offers (at least) three different ways.
 
-- [Autoinstall](/autoinstall/README.md)
-- [Zero Touch Provisioning (ZTP)](/ztp/README.md)
-- [Plug and Play (PnP)](/pnp/README.md)
+- [Autoinstall](/autoinstall/)
+- [Zero Touch Provisioning (ZTP)](/ztp/)
+- [Plug and Play (PnP)](/pnp/)
 
 This is a collection of some basic scripts to get these things up and running. All thes methods expect the devices in a factory reset state. 
 
@@ -34,14 +34,14 @@ Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contribut
 ---
 ### Autoinstall
 
-With [**_autoinstall_**](/autoinstall/README.md) you can update lot of different devices at the same time in a fully automated way. The devices can be IOS or IOS-XE devices cababil of running EEM scripts.
+With [**_autoinstall_**](/autoinstall/) you can update and configury many different devices at the same time in a fully automated way. The devices can be **IOS or IOS-XE** devices able of running **EEM** scripts.
 
 ---
 ### ZTP
 
-With [**_ZTP_**](/ztp/README.md) you can update and configure a lot of different devices at the same time in a fully automated way. ZTP uses the day0 pyton guest shell on IOS-XE devices.
+With [**_ZTP_**](/ztp/) you can update and configure a many of different devices at the same time in a fully automated way. ZTP uses the **day0 pyton guest shell** on **IOS-XE** devices.
 
 ---
 ### PnP
 
-not yet implemented.
+With [**_PnP_**](/pnp/) you can update and configure a many of different devices at the same time in a fully automated way. PnP uses the Cisco Plug and Play protocol.
