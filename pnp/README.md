@@ -72,7 +72,7 @@ files in the `vars` subbdirectory.
 
 **Note**: after changing the PnP server configuration you need to restart teh PnP server.
 
-#### Global variables in vars.py
+#### Global variables in [**_vars.py_**](/pnp/vars/vars.py)
 
 ```
 BIND_PNP_SERVER = '0.0.0.0'
@@ -92,7 +92,7 @@ FLASK_DEBUG = False
 - **CONFIG_BASE_URL**: the base URL for your configuration files
 - **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
 
-#### _IMAGES_ dictionary in images.py
+#### _IMAGES_ dictionary in [**_images.py_**](/pnp/vars/images.py)
 
 Each entry in the _software_images_ dictionary contains
 - a unique name, i.e., the product family + version
@@ -111,7 +111,7 @@ Each entry in the _software_images_ dictionary contains
 )
 ```
 
-#### _PLATFORMS_ dictionary in platforms.py
+#### _PLATFORMS_ dictionary in [**_platforms.py_**](/pnp/vars/platforms.py)
 
 Each entry in the _PLATFORMS_ dictionary contains
 - a unique name that exactly matches the model name (PID) of the device
@@ -151,4 +151,4 @@ You can monitor the PnP progress on the PnP server status page.
 
 ![Pnp server status page](sample-pnp-status.png)
 
-**Hint** you can change the status page output by modifying the **_status.html_** file in the templates subdirectory.
+**Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates subdirectory.
