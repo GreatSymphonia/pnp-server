@@ -12,7 +12,8 @@ configuration. For this purpose Cisco offers (at least) three different ways.
 - [Zero Touch Provisioning (ZTP)](/ztp/)
 - [Plug and Play (PnP)](/pnp/)
 
-This is a collection of some basic scripts to get these things up and running. All thes methods expect the devices in a factory reset state. 
+This is a collection of some basic scripts to get these things up and running. With all this methos you can update and configury many different devices at the same time in a fully automated way. The differnce is what device type are suppoted (IOS/IOS-XE) and the way the are working. All thes methods expect the devices in a factory reset state. 
+
 
 You can reset a device by issuing the command
 
@@ -34,14 +35,21 @@ Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contribut
 ---
 ### Autoinstall
 
-With [**_autoinstall_**](/autoinstall/) you can update and configury many different devices at the same time in a fully automated way. The devices can be **IOS or IOS-XE** devices able of running **EEM** scripts.
+[**_Autoinstall_**](/autoinstall/) suppots **IOS and IOS-XE** devices able of running **EEM** scripts. To use _autoinstall_ you need a DHCP server to provide option 67 (and optionally option 150) to the new devices and some kind of file server where the devices can download the image and configuartihn file from. 
+
+This ist the most basic way for day0 provisioning but still works with most devices.
 
 ---
 ### ZTP (Zero Touch Provisioning)
 
-With [**_ZTP_**](/ztp/) you can update and configure many of different devices at the same time in a fully automated way. ZTP uses the **day0 pyton guest shell** on **IOS-XE** devices.
+[**_ZTP_**](/ztp/) supports **only IOS-XE** devices able to run the **day0 pyton guest shell**. To use _autoinstall_ you need a DHCP server to provide option 67 (and optionally option 150) to the new devices and some kind of file server where the devices can download the image and configuartihn file from.
+
+With ZTP you have full access to the new device. So you could configure device from the guestshell insted of only downloading a complete config file.
+
+In newer versions of IOS-XE (i.e.: 19.09.01a no the ISR C1100 family) the guestshell has bekome optionally (separate download), so maybe the days of day0 guestshell are limited.
 
 ---
 ### PnP (Plug and Play)
 
-With [**_PnP_**](/pnp/) you can update and configure many of different devices at the same time in a fully automated way. PnP uses the Cisco Plug and Play protocol. This available on most(?) **IOS-XE** devices.
+[**_PnP_**](/pnp/) also supports **only IOS-XE** devices. PnP uses the Cisco Plug and Play protocol. To use PnP you need a DHCP server with option 43 for PnP discovery and this PnP server. PnP is the dya0 provisioning method used bei Cisco DNAC and therfore the preferd method.
+
