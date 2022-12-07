@@ -10,7 +10,7 @@ This project is based on https://github.com/oliverl-21/Open-PnP-Server
 
 ## Prerequisites
 
-- Your devices need to be PnP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
+- Your devices needs to be PnP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
 ASR routers and so on.
 - a HTTP server to store the images and config files
 - a DHCP server to provide IP configuration and option 43 to the new devices (or DNS)
@@ -19,10 +19,10 @@ ASR routers and so on.
 ## How to use
 
 ### IOS-XE Images
-Place the IOS-XE images on a HTTP server where the new devices can download them.
+Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images subdirectory. 
 
 ### Configuration files
-Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on an HTTP server so the new devices can download them. 
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server so the new devices can download them. In cas the PnP server should deliver the configuration files copy them in the `configs` subdirectory.
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
@@ -77,22 +77,24 @@ files in the `vars` subbdirectory.
 #### Global variables in [**_vars.py_**](/pnp/vars/vars.py)
 
 ```
-BIND_PNP_SERVER = '0.0.0.0'
-PORT = 8080
-TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
-STATUS_REFRESH = 60
-IMAGE_BASE_URL = 'http://192.168.10.15'
-CONFIG_BASE_URL = 'http://192.168.10.15'
-FLASK_DEBUG = False
+# BIND_PNP_SERVER = ::'
+# PORT = 8080
+# TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
+# STATUS_REFRESH = 60
+# FLASK_DEBUG = False
+IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
+CONFIG_BASE_URL = 'http://192.168.10.1133:8080/configs'
 ```
 
 - **BIND_PNP_SERVER**: the IP-adress of your python box
 - **PORT**: the TCP port the server should listen on (rember for port 80 the server needs to run as root)
 - **TIME_FORMAT**: the time format used in the status page
 - **STATUS_REFRESH**: the intervall in seconds the status page will automatically reload
+- **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
 - **IMAGE_BASE_URL**: the base URL for your images (without `/` at the end)
 - **CONFIG_BASE_URL**: the base URL for your configuration files (without `/` at the end)
-- **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
+
+**Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
 #### _IMAGES_ dictionary in [**_images.py_**](/pnp/vars/images.py)
 
