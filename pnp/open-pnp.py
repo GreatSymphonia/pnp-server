@@ -21,11 +21,17 @@ from pathlib import Path
 import sys
 import xmltodict
 import time
-from typing import Optional, List
+from typing import Optional, List, Dict
 import logging
-from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
+try:
+  from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
+  _netifaces = True
+except ModuleNotFoundError:
+    _netifaces = False
+    pass
 
-BIND_PNP_SERVER = '::'
+
+BIND_PNP_SERVER = '0.0.0.0'
 PORT = 8080
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
 STATUS_REFRESH = 60
@@ -44,6 +50,7 @@ try:
     from platforms import *
 except ModuleNotFoundError:
     pass
+
 
 CONFIG_BASE_URL = CONFIG_BASE_URL.rstrip('/')
 IMAGE_BASE_URL = IMAGE_BASE_URL.rstrip('/')
@@ -193,7 +200,7 @@ else:
 
 
 current_dir = Path(__file__)
-devices: [str, Device] = {}
+devices: Dict[str, Device] = {}
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -309,7 +316,7 @@ def create_new_device(udi: str, src_add: str):
         device.hard_error = True
 
 
-def update_device_info(data: [str, str]):
+def update_device_info(data: Dict[str, str]):
     destination = {}
 
     udi = data['pnp']['@udi']
@@ -505,12 +512,13 @@ if __name__ == '__main__':
     print(f'Image file(s) base URL  : {IMAGE_BASE_URL}')
     print(f'Config file(s) base URL : {CONFIG_BASE_URL}')
     print()
-    print('The PnP server is running on the following URL(s)')
-    if BIND_PNP_SERVER in ['0.0.0.0', '::']:
-        addresses = get_local_ip_addresses()
-        for address in addresses:
-            print(f'    http://{address}:{PORT}')
-    else:
-        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
-    print()
+    if _netifaces:
+        print('The PnP server is running on the following URL(s)')
+        if BIND_PNP_SERVER in ['0.0.0.0', '::']:
+            addresses = get_local_ip_addresses()
+            for address in addresses:
+                print(f'    http://{address}:{PORT}')
+        else:
+            print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
+        print()
     app.run(host=BIND_PNP_SERVER, port=PORT)
