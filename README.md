@@ -12,10 +12,7 @@ configuration. For this purpose Cisco offers (at least) three different ways.
 - [Zero Touch Provisioning (ZTP)](/ztp/)
 - [Plug and Play (PnP)](/pnp/)
 
-This is a collection of some basic scripts to get these things up and running. With all this methos you can update and configury many different devices at the same time in a fully automated way. The differnce is what device type are suppoted (IOS/IOS-XE) and the way the are working. All thes methods expect the devices in a factory reset state. 
-
-
-You can reset a device by issuing the command
+This is a collection of some basic scripts to get these things up and running. With all this methos you can update and configury many different devices at the same time in a fully automated way. The differnce is what device types are suppoted (IOS/IOS-XE) and the way the are working. All thes methods expect the devices in a factory reset state. You can reset a device by issuing the command
 
 ```
 pnpa service reset no-prompt
