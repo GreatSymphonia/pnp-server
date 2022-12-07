@@ -18,6 +18,8 @@ PLATFORMS = {
     ),
     'C1117-4PMLTEEAWE': Model(
         # image='C1100_17_01',
-        image='C1100_17_09',
+        # image='C1100_17_09',
+        image='C1100_17_06_04',
+
     ),
 }

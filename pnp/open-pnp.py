@@ -21,10 +21,11 @@ from pathlib import Path
 import sys
 import xmltodict
 import time
-from typing import Optional
+from typing import Optional, List
 import logging
+from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
 
-BIND_PNP_SERVER = '0.0.0.0'
+BIND_PNP_SERVER = '::'
 PORT = 8080
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
 STATUS_REFRESH = 10
@@ -43,6 +44,9 @@ try:
     from platforms import *
 except ModuleNotFoundError:
     pass
+
+CONFIG_BASE_URL = CONFIG_BASE_URL.rstrip('/')
+IMAGE_BASE_URL = IMAGE_BASE_URL.rstrip('/')
 
 
 class ErrorCodes:
@@ -128,7 +132,7 @@ class Device:
         self.platform: str = platform
         self.hw_rev: str = hw_rev
         self.serial: str = serial
-        self.src_address: str = src_address
+        self.ip_address: str = src_address
         self.current_job: str = current_job
         self.first_seen: str = first_seen
         self.last_contact: str = last_contact
@@ -176,7 +180,7 @@ class Device:
     @error_code.setter
     def error_code(self, error_code: int):
         self.__error_code = error_code
-        self.state_readable = ERROR.readable(error_code)
+        self.error_code_readable = ERROR.readable(error_code)
 
 
 app = Flask(__name__, template_folder='./templates')
@@ -192,11 +196,12 @@ current_dir = Path(__file__)
 devices: [str, Device] = {}
 
 
-def device_info(udi: str, correlator: str, info_type: str) -> str:
+def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
     # info_type can be one of:
     # image, hardware, filesystem, udi, profile, all
-    if devices[udi].current_job != 'urn:cisco:pnp:image-install':
-        devices[udi].current_job = 'urn:cisco:pnp:device-info'
+    device = devices[udi]
+    if device.current_job != 'urn:cisco:pnp:image-install':
+        device.current_job = 'urn:cisco:pnp:device-info'
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
@@ -205,12 +210,13 @@ def device_info(udi: str, correlator: str, info_type: str) -> str:
     return render_template('device_info.xml', **jinja_context)
 
 
-def backoff(udi: str, correlator: str, minutes: Optional[int] = 2) -> str:
+def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
     seconds = 0
     hours = 0
-    devices[udi].status = f'backoff for {hours:02d}:{minutes:02d}:{seconds:02d}'
-    devices[udi].current_job = 'urn:cisco:pnp:backoff'
-    devices[udi].backoff = False
+    device = devices[udi]
+    device.status = f'backoff for {hours:02d}:{minutes:02d}:{seconds:02d}'
+    device.current_job = 'urn:cisco:pnp:backoff'
+    device.pnp_backoff = False
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
@@ -222,10 +228,11 @@ def backoff(udi: str, correlator: str, minutes: Optional[int] = 2) -> str:
 
 
 # will not be used as we remove PNP via EEM. PNP terminate is missing a "write mem"
-def backoff_terminate(udi: str, correlator: str) -> str:
-    devices[udi].status = f'finished'
-    devices[udi].pnp_floe = PNPFLOW.FINISHED
-    devices[udi].current_job = 'urn:cisco:pnp:backoff-terminate'
+def pnp_backoff_terminate(udi: str, correlator: str) -> str:
+    device = devices[udi]
+    device.status = f'finished'
+    device.pnp_floe = PNPFLOW.FINISHED
+    device.current_job = 'urn:cisco:pnp:backoff-terminate'
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
@@ -233,11 +240,11 @@ def backoff_terminate(udi: str, correlator: str) -> str:
     return render_template('backoff_terminate.xml', **jinja_context)
 
 
-def install_image(udi: str, correlator: str) -> str:
+def pnp_install_image(udi: str, correlator: str) -> str:
     device = devices[udi]
     device.current_job = 'urn:cisco:pnp:image-install'
     device.pnp_flow = PNPFLOW.UPDATE_START
-    device.backoff = True
+    device.pnp_backoff = True
     device.refresh_data = True
     jinja_context = {
         'udi': udi,
@@ -246,12 +253,12 @@ def install_image(udi: str, correlator: str) -> str:
         'image': device.target_image.image,
         'md5': device.target_image.md5,
         'destination': device.destination_name,
-        'delay': 0,  # seconds
+        'delay': 0,  # reload in seconds
     }
     return render_template('image_install.xml', **jinja_context)
 
 
-def config_upgrade(udi: str, correlator: str) -> str:
+def pnp_config_upgrade(udi: str, correlator: str) -> str:
     device = devices[udi]
     device.current_job = 'urn:cisco:pnp:device-info'
     device.pnp_flow = PNPFLOW.CONFIG_START
@@ -260,12 +267,12 @@ def config_upgrade(udi: str, correlator: str) -> str:
         'correlator': correlator,
         'base_url': CONFIG_BASE_URL,
         'serial_number': device.serial,
-        'delay': 0,  # seconds
+        'delay': 0,  # reload in seconds
     }
     return render_template('config_upgrade.xml', **jinja_context)
 
 
-def bye(udi: str, correlator: str) -> str:
+def pnp_bye(udi: str, correlator: str) -> str:
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
@@ -289,7 +296,7 @@ def create_new_device(udi: str, src_add: str):
         current_job='urn:cisco:pnp:device-info',
     )
     device = devices[udi]
-    device.backoff = True
+    device.pnp_backoff = True
     if device.platform in PLATFORMS:
         platform = PLATFORMS[device.platform]
         if platform.image in IMAGES:
@@ -334,6 +341,22 @@ def check_update(udi: str):
             device.hard_error = True
 
 
+def get_local_ip_addresses() -> List[str]:
+    _addresses = []
+    for iface_name in interfaces():
+        try:
+            for _address in ifaddresses(iface_name).setdefault(AF_INET):
+                _addresses.append(_address['addr'])
+        except TypeError:
+            pass
+        try:
+            for _address in ifaddresses(iface_name).setdefault(AF_INET6):
+                _addresses.append(_address['addr'])
+        except TypeError:  # if no ip address in interface ifaddresses(iface_name) comes back with None
+            pass
+    return _addresses
+
+
 @app.route('/')
 def root():
     return redirect('/status', 302)
@@ -347,6 +370,7 @@ def status():
     jinja_context = {
         'devices': device_list,
         'refresh': STATUS_REFRESH,
+        'config_base_url': CONFIG_BASE_URL,
     }
     result = render_template('status.html', **jinja_context)
     return Response(result)
@@ -368,14 +392,14 @@ def buttons():
     return redirect('/status', 302)
 
 
-@app.route('/configs/<path:path>')
-def serve_configs(path):
-    return send_from_directory('configs', path)
+@app.route('/configs/<path:file>')
+def serve_configs(file):
+    return send_from_directory('configs', file, mimetype='text/plain')
 
 
-@app.route('/images/<path:path>')
-def serve_sw_images(path):
-    return send_from_directory('images', path)
+@app.route('/images/<path:file>')
+def serve_sw_images(file):
+    return send_from_directory('images', file, mimetype='application/octet-stream')
 
 
 @app.route('/pnp/HELLO')
@@ -387,41 +411,39 @@ def pnp_hello():
 def pnp_work_request():
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     data = xmltodict.parse(request.data)
-    # print(f'REQUEST: {data}')
     correlator = data['pnp']['info']['@correlator']
     udi = data['pnp']['@udi']
     if udi in devices.keys():
         device = devices[udi]
         device.last_contact = time.strftime(TIME_FORMAT)
-        device.src_address = src_add
+        device.ip_address = src_add
         if device.hard_error:
-            return Response(backoff(udi, correlator), mimetype='text/xml')
-        if device.backoff:
-            return Response(backoff(udi, correlator), mimetype='text/xml')
+            return Response(pnp_backoff(udi, correlator, 59), mimetype='text/xml')
+        if device.pnp_backoff:
+            return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
             device.pnp_flow = PNPFLOW.INFO
-            return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
+            return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
             device.pnp_flow = PNPFLOW.UPDATE_START
-            return Response(install_image(udi, correlator), mimetype='text/xml')
+            return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
-            return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
+            return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
-            return Response(config_upgrade(udi, correlator), mimetype='text/xml')
+            return Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
-            return Response(backoff_terminate(udi, correlator), mimetype='text/xml')
+            return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
         return Response('', 200)
     else:
         create_new_device(udi, src_add)
         # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
         devices[udi].state = PNPFLOW.NEW
-        return Response(backoff(udi, correlator), mimetype='text/xml')
+        return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
 
 
 @app.route('/pnp/WORK-RESPONSE', methods=['POST'])
 def pnp_work_response():
     data = xmltodict.parse(request.data)
-    # print(f'RESPONSE: {data}')
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     udi = data['pnp']['@udi']
     job_type = data['pnp']['response']['@xmlns']
@@ -429,7 +451,7 @@ def pnp_work_response():
         create_new_device(udi, src_add)
 
     device = devices[udi]
-    device.src_address = src_add
+    device.ip_address = src_add
     device.last_contact = time.strftime(TIME_FORMAT)
 
     if job_type == 'urn:cisco:pnp:fault':  # error without job info (correlator):-(
@@ -439,7 +461,7 @@ def pnp_work_response():
         job_status = int(data['pnp']['response']['@success'])
         if job_status == 1:  # success
             if job_type != 'urn:cisco:pnp:backoff':
-                device.backoff = True
+                device.pnp_backoff = True
             device.error_count = 0
             if job_type == 'urn:cisco:pnp:device-info':
                 if device.pnp_flow in [PNPFLOW.INFO, PNPFLOW.UPDATE_RELOAD]:
@@ -455,7 +477,7 @@ def pnp_work_response():
                 device.status = 'Finished. You can remove the device from the list :-)'
             elif job_type == 'urn:cisco:pnp:backoff':
                 pass
-            return Response(bye(udi, correlator), mimetype='text/xml')
+            return Response(pnp_bye(udi, correlator), mimetype='text/xml')
         elif job_status == 0:
             error_code = int(data['pnp']['response']['errorInfo']['errorCode'].split(' ')[-1])
             device.error_count += 1
@@ -463,7 +485,7 @@ def pnp_work_response():
             device.error_code = error_code
             if error_code in [ERROR.PNP_ERROR_BAD_CHECKSUM, ERROR.PNP_ERROR_FILE_NOT_FOUND]:
                 device.hard_error = True
-            return Response(bye(udi, correlator), mimetype='text/xml')
+            return Response(pnp_bye(udi, correlator), mimetype='text/xml')
     device.current_job = 'none'
     return Response('', 200)
 
@@ -476,5 +498,19 @@ if __name__ == '__main__':
         print('CONFIG_BASE_URL not set, check ./vars/vars.py')
         exit(1)
 
-    print('runnig PnP server. Stop with ctrl+c')
+    print()
+    print('Running PnP server. Stop with ctrl+c')
+    print(f'Bind IP ...............: {BIND_PNP_SERVER}')
+    print(f'Server port ...........: {PORT}')
+    print(f'Image base URL ........: {IMAGE_BASE_URL}')
+    print(f'Config file base URL ..: {CONFIG_BASE_URL}')
+    print()
+    print('The PnP server is running on the following URL(s)')
+    if BIND_PNP_SERVER in ['0.0.0.0', '::']:
+        addresses = get_local_ip_addresses()
+        for address in addresses:
+            print(f'    http://{address}:{PORT}/status')
+    else:
+        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}/status')
+    print()
     app.run(host=BIND_PNP_SERVER, port=PORT)

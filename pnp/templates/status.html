@@ -26,23 +26,24 @@
         <th>Serial number</th>
         <th>Platform</th>
         <th>HW rev.</th>
-        <th>Device IP</th>
+        <th>IP-Address</th>
         <th>PnP Flow</th>
         <th>Status</th>
-        <td>First seen</td>
+        <th>First seen</th>
         <th>Last contact</th>
         <th>Current job</th>
         <th>Current<br>version</th>
         <th>Target<br>version</th>
-        <th>Current image</th>
-        <th>Target image</th>
-        <th>Size</th>
-        <th>Free space</th>
-        <th>Destination</th>
+<!--        <th>Current image</th>-->
+<!--        <th>Target image</th>-->
+<!--        <th>Size</th>-->
+<!--        <th>Free space</th>-->
+<!--        <th>Destination</th>-->
+        <th>Error<br>code</th>
         <th>Last error</th>
         <th>Error<br>count</th>
         <th>Hard<br>error</th>
-        <th>Backoff<br>count</th>
+<!--        <th>Backoff</th>-->
     </tr>
     {% for device in devices %}
     <tr>
@@ -54,10 +55,11 @@
                 <input type="submit" value="Remove" name="{{ device.udi }}"/>
             </form>
         </td>
-        <td>{{ device.serial }}</td>
+<!--        <td>{{ device.serial }}</td>-->
+        <td><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{ device.serial }}</a></td>
         <td>{{ device.platform }}</td>
         <td>{{ device.hw_rev }}</td>
-        <td>{{ device.src_address }}</td>
+        <td>{{ device.ip_address }}</td>
         <td>{{ device.pnp_flow_readable }}</td>
         <td>{{ device.status }} </td>
         <td>{{ device.first_seen }}</td>
@@ -65,22 +67,23 @@
         <td>{{ device.current_job }}</td>
         <td>{{ device.version }}</td>
         <td>{{ device.target_image.version }}</td>
-        <td>{{ device.image }}</td>
-        <td>{{ device.target_image.image }}</td>
-        <td>{{ device.target_image.size }}</td>
-        <td>{{ device.destination_free }}</td>
-        <td>{{ device.destination_name }}</td>
+<!--        <td>{{ device.image }}</td>-->
+<!--        <td>{{ device.target_image.image }}</td>-->
+<!--        <td>{{ device.target_image.size }}</td>-->
+<!--        <td>{{ device.destination_free }}</td>-->
+<!--        <td>{{ device.destination_name }}</td>-->
+        <td>{{ device.error_code }}</td>
         <td>{{ device.error_code_readable }}</td>
         <td>{{ device.error_count }}</td>
         <td>{{ device.hard_error }}</td>
-        <td>{{ device.backoff }}</td>
+<!--        <td>{{ device.backoff }}</td>-->
     </tr>
     {% endfor %}
 </table>
 <footer>
     <br><br>
     <p>Written by: <a href="mailto:thl-cmk@outlook.com,">thl-cmk</a> | Date: 2022-12-05 | for more information see
-        <a href="https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision">Cisco Day0 provision</a> </p>
+        <a href="https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision" target="_blank">Cisco Day0 provisioning</a> </p>
 </footer>
 </body>
 </html>
