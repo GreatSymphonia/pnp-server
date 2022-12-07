@@ -33,7 +33,7 @@ except ModuleNotFoundError:
 
 BIND_PNP_SERVER = '0.0.0.0'
 PORT = 8080
-TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
+TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 STATUS_REFRESH = 60
 FLASK_DEBUG = False
 IMAGE_BASE_URL = ''
