@@ -19,14 +19,16 @@ This project is based on  https://github.com/cisco-ie/IOSXE_ZTP
 
 ## Prerequisites
 
-- Your devices need to be ZTP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
+- Your devices needs to be ZTP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
 ASR routers and so on.
 - a file server to store the images, config files and the ztp script (recommended is an HTTP server)  
 - a DHCP server to provide IP configuration and option 67 to the new devices 
 
 **Note:** there needs to be one config file for each device with the name SERIALNUMBER.cfg. SERIALNUMBER needs to be 
 replaced by the exact serial number of the device.
+
 **Note:** HTTP-based download of ZTP Python script available as of 16.8.1.
+
 **Note:** ZTP not supported in IOS XE 16.12.4 due to a defect.
 
 ## How to use
@@ -80,9 +82,9 @@ Each entry in the _models_ dictionary contains
 
 ### global variables
 
-- _http_image_: the ip address of the HTTP server, where your images are stored
-- _http_config_: the ip address of the HTTP server, where your config files are stored
-- _ntp_server_:  the ip address of your NTP to synchronize time stamps of log messages (disable with 'ntp_server=None')
+- _http_image_: the ip address of the HTTP server where your images are stored
+- _http_config_: the ip address of the HTTP server where your config files are stored
+- _ntp_server_:  the ip address of your NTP server to synchronize time stamps of log messages (disable with 'ntp_server=None')
 - _syslog_server_: the ip address of yor syslog server (disable with 'syslog_server=None')
 - _console_log_level_: the log level on the console, default is `emergencies` for a clean output
 - _log_to_file_: set to `False` to disable the creation of a logfile (default is `True`). The logfile is under `flash:/guest-share/ztp.log`.
@@ -111,15 +113,6 @@ A DHCP server is required for ZTP, as this is how the device learns about where 
 from. In our case, the DHCP server is the open source ISC DHCPd and the configuration file is at /etc/dhcp/dhcpd.conf 
 in a Linux developer box. The option bootfile-name is also known as option 67 and it specifies the python file ztp.py
 
-Here a sample how to do this on an IOS/IOS-XE switch.
-```
-ip dhcp pool autoinstall
- network 192.168.10.0 255.255.255.0
- default-router 192.168.10.1
- option 67 ascii http://192.168.10.15/ztp.py
- lease 0 2
-```
-
 Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for your use. 
 ```    
     option domain-name "lab_name";
@@ -146,6 +139,15 @@ Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for you
         range x.x.x.x x.x.x.x;
         option bootfile-name "http://x.x.x.x/ztp.py";
       }
+```
+
+Here a sample how to do this on an IOS/IOS-XE switch.
+```
+ip dhcp pool autoinstall
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ option 67 ascii http://192.168.10.15/ztp.py
+ lease 0 2
 ```
 
 #### Useful DHCP commands 
