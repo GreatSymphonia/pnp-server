@@ -28,10 +28,10 @@ from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
 BIND_PNP_SERVER = '::'
 PORT = 8080
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
-STATUS_REFRESH = 10
+STATUS_REFRESH = 60
+FLASK_DEBUG = False
 IMAGE_BASE_URL = ''
 CONFIG_BASE_URL = ''
-FLASK_DEBUG = False
 
 IMAGES = {}
 PLATFORMS = {}
@@ -500,17 +500,17 @@ if __name__ == '__main__':
 
     print()
     print('Running PnP server. Stop with ctrl+c')
-    print(f'Bind IP ...............: {BIND_PNP_SERVER}')
-    print(f'Server port ...........: {PORT}')
-    print(f'Image base URL ........: {IMAGE_BASE_URL}')
-    print(f'Config file base URL ..: {CONFIG_BASE_URL}')
+    print(f'Bind to IP-address      : {BIND_PNP_SERVER}')
+    print(f'Listen on port          : {PORT}')
+    print(f'Image file(s) base URL  : {IMAGE_BASE_URL}')
+    print(f'Config file(s) base URL : {CONFIG_BASE_URL}')
     print()
     print('The PnP server is running on the following URL(s)')
     if BIND_PNP_SERVER in ['0.0.0.0', '::']:
         addresses = get_local_ip_addresses()
         for address in addresses:
-            print(f'    http://{address}:{PORT}/status')
+            print(f'    http://{address}:{PORT}')
     else:
-        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}/status')
+        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
     print()
     app.run(host=BIND_PNP_SERVER, port=PORT)
