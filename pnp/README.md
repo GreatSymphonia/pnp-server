@@ -69,6 +69,7 @@ c:\cisco_day0_provision\pnp>python -m venv .venv
 c:\cisco_day0_provision\pnp>venv\Scripts\activate.bat
 (.venv)c:\cisco_day0_provision\pnp>pip install flask
 (.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
+(.venv)c:\cisco_day0_provision\pnp>pip install python-dotenv
 (.venv)c:\cisco_day0_provision\pnp>python open-pnp.py
 
 Running PnP server. Stop with ctrl+c
