@@ -30,6 +30,7 @@ Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ0
 
 ### Install the PnP server:
 
+on Linux
 ```
 # clone the git repository
 ~/: git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
@@ -51,7 +52,30 @@ Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ0
 
 # run the pnp server
 (.venv) :~/cisco_day0_provision/pnp$ python3.8 open-pnp.py 
-runnig PnP server. Stop with ctrl+c
+
+Running PnP server. Stop with ctrl+c
+Bind to IP-address      : ::
+Listen on port          : 8080
+Image file(s) base URL  : http://192.168.10.133:8080/images
+Config file(s) base URL : http://192.168.10.133:8080/configs
+
+```
+
+on Windows
+```
+c:\>git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
+c:\>cd cisco_day0_provision\pnp
+c:\cisco_day0_provision\pnp>python -m venv .venv
+c:\cisco_day0_provision\pnp>venv\Scripts\activate.bat
+(.venv)c:\cisco_day0_provision\pnp>pip install flask
+(.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
+(.venv)c:\cisco_day0_provision\pnp>python open-pnp.py
+
+Running PnP server. Stop with ctrl+c
+Bind to IP-address      : ::
+Listen on port          : 8080
+Image file(s) base URL  : http://192.168.10.133:8080/images
+Config file(s) base URL : http://192.168.10.133:8080/configs
 
 ```
 
