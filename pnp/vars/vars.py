@@ -5,8 +5,8 @@
 # BIND_PNP_SERVER = '::'
 # PORT = 8080
 # TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
-# STATUS_REFRESH = 60
-DEBUG = True
+STATUS_REFRESH = 10
+# DEBUG = True
 # LOG_TO_FILE = True
 # LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
