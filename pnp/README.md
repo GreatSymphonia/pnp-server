@@ -84,7 +84,7 @@ You can check if the PnP server is running by opening a webbrowser and accessing
 
 `http://<your-ip>:8080/status`
 
-![Pnp server status page](sample-pnp-status.png)
+![PnP server status page](sample-pnp-status.png)
 
 
 ### Configure the PnP server
@@ -104,9 +104,11 @@ files in the `vars` subbdirectory.
 ```
 # BIND_PNP_SERVER = ::'
 # PORT = 8080
-# TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%Z'
+# TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 # STATUS_REFRESH = 60
-# FLASK_DEBUG = False
+# DEBUG = False
+# LOG_TO_FILE = True
+# LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
 CONFIG_BASE_URL = 'http://192.168.10.1133:8080/configs'
 ```
@@ -115,7 +117,9 @@ CONFIG_BASE_URL = 'http://192.168.10.1133:8080/configs'
 - **PORT**: the TCP port the server should listen on (rember for port 80 the server needs to run as root)
 - **TIME_FORMAT**: the time format used in the status page
 - **STATUS_REFRESH**: the intervall in seconds the status page will automatically reload
-- **FLASK_DEBUG**: enable flask debug output with `FLASK_DEBUG=True`
+- **DEBUG**: enable debug output with `DEBUG=True`
+- **LOG_FILE**: path/name of the log file
+- **LOG_TO_FILE**: erite log output to file
 - **IMAGE_BASE_URL**: the base URL for your images (without `/` at the end)
 - **CONFIG_BASE_URL**: the base URL for your configuration files (without `/` at the end)
 
@@ -171,7 +175,7 @@ Here a sample how to do this on an IOS/IOS-XE switch.
 ip dhcp pool autoinstall
  network 192.168.10.0 255.255.255.0
  default-router 192.168.10.1
- option 43 ascii 5A;K4;B2;I192.168.10.15;J8080
+ option 43 ascii 5A1D;K4;B2;I192.168.10.15;J8080
  lease 0 2
 ```
 For more details on PnP server dicovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
@@ -180,6 +184,6 @@ For more details on PnP server dicovery options see [PnP server discovery](https
 
 You can monitor the PnP progress on the PnP server status page.
 
-![Pnp server status page](sample-pnp-status.png)
+![PnP server status page](sample-pnp-status.png)
 
 **Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates subdirectory.
