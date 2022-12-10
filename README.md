@@ -48,5 +48,5 @@ In newer versions of IOS-XE (i.e.: 19.09.01a no the ISR C1100 family) the guests
 ---
 ### PnP (Plug and Play)
 
-[**_PnP_**](/pnp/) also supports **only IOS-XE** devices. PnP uses the Cisco Plug and Play protocol. To use PnP you need a DHCP server with option 43 for PnP discovery and this PnP server. PnP is the dya0 provisioning method used bei Cisco DNAC and therfore the preferd method.
+[**_PnP_**](/pnp/) also supports **IOS-XE and newer IOS** devices. PnP uses the Cisco Plug and Play protocol. To use PnP you need a DHCP server with option 43 for PnP discovery and this PnP server. PnP is the dya0 provisioning method used bei Cisco DNAC and therfore the preferd method.
 
