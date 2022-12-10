@@ -84,7 +84,7 @@ You can check if the PnP server is running by opening a webbrowser and accessing
 
 `http://<your-ip>:8080/status`
 
-![PnP server status page](sample-pnp-status.png)
+![PnP server new status page](pnp-empty-status.png)
 
 
 ### Configure the PnP server
