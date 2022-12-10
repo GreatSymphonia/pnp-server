@@ -5,7 +5,7 @@
 #
 # Author: thl-cmk[at]outlook[dot]com
 # URL   : https://thl-cmk.hopto.org
-# Date  : 2022-12-05
+# Date  : 2022-12-10
 # File  : open-pnp.py
 #
 # Basic Cisco PnP server for Day0 provisioning
@@ -21,11 +21,13 @@ from pathlib import Path
 import sys
 import xmltodict
 import time
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import logging
+from logging.handlers import RotatingFileHandler
+
 try:
-  from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
-  _netifaces = True
+    from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
+    _netifaces = True
 except ModuleNotFoundError:
     _netifaces = False
     pass
@@ -35,7 +37,9 @@ BIND_PNP_SERVER = '0.0.0.0'
 PORT = 8080
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 STATUS_REFRESH = 60
-FLASK_DEBUG = False
+DEBUG = False
+LOG_TO_FILE = True
+LOG_FILE = 'log/pnp_debug_log'
 IMAGE_BASE_URL = ''
 CONFIG_BASE_URL = ''
 
@@ -63,6 +67,7 @@ class ErrorCodes:
         101: 'no free space for update',
         102: 'unknown image',
 
+        1412: ' Invalid input detected (config)',
         1413: 'Invalid input detected',
         1609: 'Error while retrieving device filesystem info',
         1816: 'Error verifying checksum for Image',
@@ -77,6 +82,7 @@ class ErrorCodes:
         self.ERROR_NO_FREE_SPACE = 101
         self.ERROR_NO_IMAGE = 102
 
+        self.PNP_ERROR_INVALID_CONFIG = 1412
         self.PNP_ERROR_INVALID_INPUT = 1413
         self.PNP_ERROR_NO_FILESYSTEM_INFO = 1609
         self.PNP_ERROR_BAD_CHECKSUM = 1816
@@ -96,13 +102,13 @@ class PnpFlow:
         1: 'new device',
         2: 'info',
 
-        10: 'image update needed',
-        11: 'image update stated',
-        12: 'image update done/not needed',
-        13: 'reload for image update',
+        10: 'update required',
+        11: 'update started',
+        12: 'no update required/done',
+        13: 'update done -> reloading',
 
-        21: 'config update start',
-        22: 'config update down',
+        21: 'config start',
+        22: 'config down -> reloading',
         23: 'reload for config update',
 
         99: 'finished',
@@ -157,7 +163,9 @@ class Device:
         self.__error_code: int = 0
         self.error_code_readable: str = ERROR.readable(ERROR.ERROR_NO_ERROR)
         self.error_count: int = 0
-        self.hard_error: bool = False
+        self.error_message = ''
+        self.__hard_error: bool = False
+        self.__status_class: str = ''
 
     @property
     def pnp_flow(self) -> int:
@@ -167,6 +175,8 @@ class Device:
     def pnp_flow(self, pnp_flow: int):
         self.__pnp_flow = pnp_flow
         self.pnp_flow_readable = PNPFLOW.readable(pnp_flow)
+        if pnp_flow == PNPFLOW.FINISHED:
+            self.__status_class = 'finished'
 
     @property
     def refresh_data(self) -> bool:
@@ -188,10 +198,28 @@ class Device:
     def error_code(self, error_code: int):
         self.__error_code = error_code
         self.error_code_readable = ERROR.readable(error_code)
+        self.__status_class = 'warning'
+
+    @property
+    def hard_error(self) -> bool:
+        return self.__hard_error
+
+    @hard_error.setter
+    def hard_error(self, hard_error: bool):
+        self.__hard_error = hard_error
+        self.__status_class = 'error'
+
+    @property
+    def status_class(self) -> str:
+        return self.__status_class
+
+    @status_class.setter
+    def status_class(self, status_class: str):
+        self.__status_class = status_class
 
 
 app = Flask(__name__, template_folder='./templates')
-if FLASK_DEBUG:
+if DEBUG:
     app.debug = True
 else:
     # disable FLASK console output
@@ -201,6 +229,39 @@ else:
 
 current_dir = Path(__file__)
 devices: Dict[str, Device] = {}
+
+
+def configure_logger(path):
+    log_formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(name)s :: %(module)s ::%(message)s')
+    log_file = path
+    # create a new file > 5 mb size
+    log_handler = RotatingFileHandler(
+        log_file,
+        mode='a',
+        maxBytes=5 * 1024 * 1024,
+        backupCount=10,
+        # encoding=None,
+        # delay=0
+    )
+    log_handler.setFormatter(log_formatter)
+    log_handler.setLevel(logging.INFO)
+    log = logging.getLogger('root')
+    log.setLevel(logging.INFO)
+    log.addHandler(log_handler)
+
+
+def log_info(message):
+    # print(time.asctime() + ' :: INFO :: ' + message)
+    if LOG_TO_FILE:
+        log = logging.getLogger('root')
+        log.info(message)
+
+
+def log_critical(message):
+    # print(time.asctime() + ' :: CRIT :: ' + message)
+    if LOG_TO_FILE:
+        log = logging.getLogger('root')
+        log.critical(message)
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -214,7 +275,10 @@ def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
         'correlator': correlator,
         'info_type': info_type
     }
-    return render_template('device_info.xml', **jinja_context)
+    _template = render_template('device_info.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
@@ -223,7 +287,7 @@ def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
     device = devices[udi]
     device.status = f'backoff for {hours:02d}:{minutes:02d}:{seconds:02d}'
     device.current_job = 'urn:cisco:pnp:backoff'
-    device.pnp_backoff = False
+    device.backoff = False
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
@@ -231,7 +295,10 @@ def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
         'minutes': minutes,
         'hours': hours,
     }
-    return render_template('backoff.xml', **jinja_context)
+    _template = render_template('backoff.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 # will not be used as we remove PNP via EEM. PNP terminate is missing a "write mem"
@@ -244,14 +311,17 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
         'udi': udi,
         'correlator': correlator,
     }
-    return render_template('backoff_terminate.xml', **jinja_context)
+    _template = render_template('backoff_terminate.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 def pnp_install_image(udi: str, correlator: str) -> str:
     device = devices[udi]
     device.current_job = 'urn:cisco:pnp:image-install'
     device.pnp_flow = PNPFLOW.UPDATE_START
-    device.pnp_backoff = True
+    device.backoff = True
     device.refresh_data = True
     jinja_context = {
         'udi': udi,
@@ -262,7 +332,10 @@ def pnp_install_image(udi: str, correlator: str) -> str:
         'destination': device.destination_name,
         'delay': 0,  # reload in seconds
     }
-    return render_template('image_install.xml', **jinja_context)
+    _template = render_template('image_install.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 def pnp_config_upgrade(udi: str, correlator: str) -> str:
@@ -276,7 +349,10 @@ def pnp_config_upgrade(udi: str, correlator: str) -> str:
         'serial_number': device.serial,
         'delay': 0,  # reload in seconds
     }
-    return render_template('config_upgrade.xml', **jinja_context)
+    _template = render_template('config_upgrade.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 def pnp_bye(udi: str, correlator: str) -> str:
@@ -284,7 +360,10 @@ def pnp_bye(udi: str, correlator: str) -> str:
         'udi': udi,
         'correlator': correlator,
     }
-    return render_template('bye.xml', **jinja_context)
+    _template = render_template('bye.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 SERIAL_NUM_RE = re.compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
@@ -303,7 +382,7 @@ def create_new_device(udi: str, src_add: str):
         current_job='urn:cisco:pnp:device-info',
     )
     device = devices[udi]
-    device.pnp_backoff = True
+    device.backoff = True
     if device.platform in PLATFORMS:
         platform = PLATFORMS[device.platform]
         if platform.image in IMAGES:
@@ -316,7 +395,7 @@ def create_new_device(udi: str, src_add: str):
         device.hard_error = True
 
 
-def update_device_info(data: Dict[str, str]):
+def update_device_info(data: Dict[str, Any]):
     destination = {}
 
     udi = data['pnp']['@udi']
@@ -378,8 +457,12 @@ def status():
         'devices': device_list,
         'refresh': STATUS_REFRESH,
         'config_base_url': CONFIG_BASE_URL,
+        'image_base_url': IMAGE_BASE_URL,
     }
-    result = render_template('status.html', **jinja_context)
+    if DEBUG:
+        result = render_template('status_debug.html', **jinja_context)
+    else:
+        result = render_template('status.html', **jinja_context)
     return Response(result)
 
 
@@ -394,7 +477,7 @@ def buttons():
             devices.pop(udi)
         elif button == 'Refresh':
             device.refresh_data = True
-            device.last_error = None
+            device.error_message = ''
 
     return redirect('/status', 302)
 
@@ -418,6 +501,8 @@ def pnp_hello():
 def pnp_work_request():
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     data = xmltodict.parse(request.data)
+    if DEBUG:
+        log_info(f'REQUEST: {data}')
     correlator = data['pnp']['info']['@correlator']
     udi = data['pnp']['@udi']
     if udi in devices.keys():
@@ -426,31 +511,56 @@ def pnp_work_request():
         device.ip_address = src_add
         if device.hard_error:
             return Response(pnp_backoff(udi, correlator, 59), mimetype='text/xml')
-        if device.pnp_backoff:
-            return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
+            pass
+        if device.backoff:
+            if DEBUG:
+                log_info('BACKOFF')
+            # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
+            # error_count == 12 -> like hard_error
+            minutes = min((device.error_count * 5), 57) + 2
+            if minutes > 57:
+                device.hard_error = True
+            return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
+            if DEBUG:
+                log_info('PNPFLOW.NEW')
             device.pnp_flow = PNPFLOW.INFO
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
+            if DEBUG:
+                log_info('PNPFLOW.UPDATE_NEEDED')
             device.pnp_flow = PNPFLOW.UPDATE_START
             return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
+            if DEBUG:
+                log_info('PNPFLOW.UPDATE_RELOAD')
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
+            if DEBUG:
+                log_info('PNPFLOW.UPDATE_DOWN')
             return Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
+            if DEBUG:
+                log_info('PNPFLOW.CONFIG_DOWN')
             return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
+        if DEBUG:
+            log_info(f'Other PNP_FLOW: {device.pnp_flow}')
         return Response('', 200)
     else:
+        if DEBUG:
+            log_info('REQUEST NEW DEVICE FOUND')
         create_new_device(udi, src_add)
         # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
-        devices[udi].state = PNPFLOW.NEW
+        devices[udi].pnp_flow = PNPFLOW.NEW
         return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
+        # return Response('', 200)
 
 
 @app.route('/pnp/WORK-RESPONSE', methods=['POST'])
 def pnp_work_response():
     data = xmltodict.parse(request.data)
+    if DEBUG:
+        log_info(f'RESPONSE: {data}')
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     udi = data['pnp']['@udi']
     job_type = data['pnp']['response']['@xmlns']
@@ -466,9 +576,14 @@ def pnp_work_response():
     else:
         correlator = data['pnp']['response']['@correlator']
         job_status = int(data['pnp']['response']['@success'])
+        if DEBUG:
+            log_info(correlator)
+            log_info(job_type)
+            log_info(device.pnp_flow_readable)
+            log_info(job_status)
         if job_status == 1:  # success
-            if job_type != 'urn:cisco:pnp:backoff':
-                device.pnp_backoff = True
+            if job_type not in ['urn:cisco:pnp:backoff']:
+                device.backoff = True
             device.error_count = 0
             if job_type == 'urn:cisco:pnp:device-info':
                 if device.pnp_flow in [PNPFLOW.INFO, PNPFLOW.UPDATE_RELOAD]:
@@ -483,18 +598,24 @@ def pnp_work_response():
                 device.pnp_flow = PNPFLOW.FINISHED
                 device.status = 'Finished. You can remove the device from the list :-)'
             elif job_type == 'urn:cisco:pnp:backoff':
+                # device.pnp_flow = PNPFLOW.INFO
                 pass
-            return Response(pnp_bye(udi, correlator), mimetype='text/xml')
+            _response = pnp_bye(udi, correlator)
+            if DEBUG:
+                log_info(_response)
+            return Response(_response, mimetype='text/xml')
         elif job_status == 0:
             error_code = int(data['pnp']['response']['errorInfo']['errorCode'].split(' ')[-1])
             device.error_count += 1
-            device.last_error = data['pnp']['response']['errorInfo']['errorMessage']
+            device.error_message = data['pnp']['response']['errorInfo']['errorMessage']
             device.error_code = error_code
             if error_code in [ERROR.PNP_ERROR_BAD_CHECKSUM, ERROR.PNP_ERROR_FILE_NOT_FOUND]:
                 device.hard_error = True
             return Response(pnp_bye(udi, correlator), mimetype='text/xml')
     device.current_job = 'none'
-    return Response('', 200)
+    if DEBUG:
+        log_info('Empty Response')
+    return Response('')
 
 
 if __name__ == '__main__':
@@ -504,6 +625,10 @@ if __name__ == '__main__':
     if CONFIG_BASE_URL == '':
         print('CONFIG_BASE_URL not set, check ./vars/vars.py')
         exit(1)
+
+    if DEBUG:
+        configure_logger(LOG_FILE)
+        log_info('STARTED LOGGER')
 
     print()
     print('Running PnP server. Stop with ctrl+c')

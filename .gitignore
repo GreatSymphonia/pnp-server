@@ -1,3 +1,10 @@
+# config files
+pnp/configs/*.cfg
+# image files
+pnp/images/*.bin
+# log files
+pnp/log/*.log
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,linux
@@ -7,11 +14,6 @@
 
 # pycharm
 .idea
-
-# config files
-pnp/configs/*.cfg
-# image files
-pnp/images/*.bin
 
 # pychache
 __pycache__
