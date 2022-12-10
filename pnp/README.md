@@ -19,10 +19,10 @@ ASR routers and so on.
 ## How to use
 
 ### IOS-XE Images
-Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images subdirectory. 
+Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images subdirectory. For the images I would recomend using a _real_ HTTP server.
 
 ### Configuration files
-Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server so the new devices can download them. In cas the PnP server should deliver the configuration files copy them in the `configs` subdirectory.
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server so the new devices can download them. In cas the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
