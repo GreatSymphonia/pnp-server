@@ -3,7 +3,7 @@ pnp/configs/*.cfg
 # image files
 pnp/images/*.bin
 # log files
-pnp/log/*.log
+pnp/log/
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,linux

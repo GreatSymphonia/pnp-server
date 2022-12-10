@@ -8,6 +8,6 @@
 # STATUS_REFRESH = 60
 DEBUG = True
 # LOG_TO_FILE = True
-# LOG_FILE = 'log/pnp_debug_log'
+# LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
 CONFIG_BASE_URL = 'http://192.168.10.133:8080/configs'

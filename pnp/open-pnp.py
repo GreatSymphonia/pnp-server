@@ -39,7 +39,7 @@ TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 STATUS_REFRESH = 60
 DEBUG = False
 LOG_TO_FILE = True
-LOG_FILE = 'log/pnp_debug_log'
+LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = ''
 CONFIG_BASE_URL = ''
 
