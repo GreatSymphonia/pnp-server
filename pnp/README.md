@@ -139,7 +139,6 @@ Each entry in the _IMAGES_ dictionary contains
     image='c1100-universalk9.17.06.04.SPA.bin',
     version='17.06.04',
     md5_image='2caa962f5ed0ecc52f99b90c733c54de',
-    install_mode=True
     size=651402492,
 )
 ```
