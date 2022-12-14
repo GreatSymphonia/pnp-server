@@ -35,7 +35,7 @@ on Linux
 # clone the git repository
 ~/: git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
 
-# got to the pnp subproject
+# go to the pnp subproject
 ~/: cd cisco_day0_provision/pnp
 
 # create a python virtual environment (optional)
