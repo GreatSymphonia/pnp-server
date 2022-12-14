@@ -66,7 +66,7 @@ on Windows
 c:\>git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
 c:\>cd cisco_day0_provision\pnp
 c:\cisco_day0_provision\pnp>python -m venv .venv
-c:\cisco_day0_provision\pnp>venv\Scripts\activate.bat
+c:\cisco_day0_provision\pnp>.venv\Scripts\activate.bat
 (.venv)c:\cisco_day0_provision\pnp>pip install flask
 (.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
 (.venv)c:\cisco_day0_provision\pnp>pip install python-dotenv
