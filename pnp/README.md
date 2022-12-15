@@ -19,7 +19,7 @@ ASR routers and so on.
 ## How to use
 
 ### IOS-XE Images
-Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images' subdirectory. For the images I would recommend using a _real_ HTTP server.
+Place the IOS-XE images on an HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images' subdirectory. For the images I would recommend using a _real_ HTTP server.
 
 ### Configuration files
 Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server, so the new devices can download them. In cas the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
@@ -166,7 +166,7 @@ Structure of DHCP option 43:
 - 1: Version
 - D: Debug On
 - K: Defines the Transport Protocol as 4 = HTTP
-- B: Defines the Server Adress as 2 = IPv4
+- B: Defines the Server Address as 2 = IPv4
 - I: is your Server IP
 - J: is your Server Port
 
