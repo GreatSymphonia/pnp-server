@@ -35,7 +35,7 @@ on Linux
 # clone the git repository
 ~/: git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
 
-# got to the pnp subproject
+# go to the pnp subproject
 ~/: cd cisco_day0_provision/pnp
 
 # create a python virtual environment (optional)
@@ -66,7 +66,7 @@ on Windows
 c:\>git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision.git
 c:\>cd cisco_day0_provision\pnp
 c:\cisco_day0_provision\pnp>python -m venv .venv
-c:\cisco_day0_provision\pnp>venv\Scripts\activate.bat
+c:\cisco_day0_provision\pnp>.venv\Scripts\activate.bat
 (.venv)c:\cisco_day0_provision\pnp>pip install flask
 (.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
 (.venv)c:\cisco_day0_provision\pnp>pip install requests
@@ -111,7 +111,7 @@ files in the `vars` subdirectory.
 # LOG_TO_FILE = True
 # LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
-CONFIG_BASE_URL = 'http://192.168.10.1133:8080/configs'
+CONFIG_BASE_URL = 'http://192.168.10.133:8080/configs'
 ```
 
 - **BIND_PNP_SERVER**: the IP-address of your python box
@@ -140,7 +140,6 @@ Each entry in the _IMAGES_ dictionary contains
     image='c1100-universalk9.17.06.04.SPA.bin',
     version='17.06.04',
     md5_image='2caa962f5ed0ecc52f99b90c733c54de',
-    install_mode=True
     size=651402492,
 )
 ```
