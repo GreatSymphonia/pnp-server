@@ -10,7 +10,7 @@ This project is based on https://github.com/oliverl-21/Open-PnP-Server
 
 ## Prerequisites
 
-- Your devices needs to be PnP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
+- Your devices need to be PnP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
 ASR routers and so on.
 - a HTTP server to store the images and config files
 - a DHCP server to provide IP configuration and option 43 to the new devices (or DNS)
@@ -19,10 +19,10 @@ ASR routers and so on.
 ## How to use
 
 ### IOS-XE Images
-Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images subdirectory. For the images I would recomend using a _real_ HTTP server.
+Place the IOS-XE images on a HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images' subdirectory. For the images I would recommend using a _real_ HTTP server.
 
 ### Configuration files
-Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server so the new devices can download them. In cas the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server, so the new devices can download them. In cas the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
@@ -69,6 +69,7 @@ c:\cisco_day0_provision\pnp>python -m venv .venv
 c:\cisco_day0_provision\pnp>venv\Scripts\activate.bat
 (.venv)c:\cisco_day0_provision\pnp>pip install flask
 (.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
+(.venv)c:\cisco_day0_provision\pnp>pip install requests
 (.venv)c:\cisco_day0_provision\pnp>pip install python-dotenv
 (.venv)c:\cisco_day0_provision\pnp>python open-pnp.py
 
@@ -80,7 +81,7 @@ Config file(s) base URL : http://192.168.10.133:8080/configs
 
 ```
 
-You can check if the PnP server is running by opening a webbrowser and accessing the status page of the pnp server
+You can check if the PnP server is running by opening a web browser and accessing the status page of the pnp server
 
 `http://<your-ip>:8080/status`
 
@@ -91,15 +92,15 @@ You can check if the PnP server is running by opening a webbrowser and accessing
 
 to use the PnP server you need to configure the server by modifying the 
 
-- [**_vars.py_**](/pnp/vars/vars.py)
+- [**_settings.py_**](/pnp/vars/settings.py)
 - [**_images.py_**](/pnp/vars/images.py)
 - [**_platforms.py_**](/pnp/vars/platforms.py)
 
-files in the `vars` subbdirectory.
+files in the `vars` subdirectory.
 
 **Note**: after changing the PnP server configuration you need to restart the PnP server.
 
-#### Global variables in [**_vars.py_**](/pnp/vars/vars.py)
+#### Global variables in [**_settings.py_**](/pnp/vars/settings.py)
 
 ```
 # BIND_PNP_SERVER = ::'
@@ -113,13 +114,13 @@ IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
 CONFIG_BASE_URL = 'http://192.168.10.1133:8080/configs'
 ```
 
-- **BIND_PNP_SERVER**: the IP-adress of your python box
-- **PORT**: the TCP port the server should listen on (rember for port 80 the server needs to run as root)
+- **BIND_PNP_SERVER**: the IP-address of your python box
+- **PORT**: the TCP port the server should listen on (remember for port 80 the server needs to run as root)
 - **TIME_FORMAT**: the time format used in the status page
-- **STATUS_REFRESH**: the intervall in seconds the status page will automatically reload
+- **STATUS_REFRESH**: the interval in seconds the status page will automatically reload
 - **DEBUG**: enable debug output with `DEBUG=True`
 - **LOG_FILE**: path/name of the log file
-- **LOG_TO_FILE**: erite log output to file
+- **LOG_TO_FILE**: write log output to file
 - **IMAGE_BASE_URL**: the base URL for your images (without `/` at the end)
 - **CONFIG_BASE_URL**: the base URL for your configuration files (without `/` at the end)
 
@@ -157,7 +158,7 @@ Each entry in the _PLATFORMS_ dictionary contains
 ```
 
 ### PnP server discovery
-The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Where _your.domain_ will be replaced by the DNS domain the device receives via DHCP. With DHCP, the DHCP server needs to send the vendor option 43.
+The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Replaced _your.domain_ by the DNS domain the device receives via DHCP. With DHCP, the DHCP server needs to send the vendor option 43.
 
 Structure of DHCP option 43:
 
@@ -178,7 +179,7 @@ ip dhcp pool autoinstall
  option 43 ascii 5A1D;K4;B2;I192.168.10.15;J8080
  lease 0 2
 ```
-For more details on PnP server dicovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
+For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
 
 ### PnP Status page
 
@@ -186,4 +187,4 @@ You can monitor the PnP progress on the PnP server status page.
 
 ![PnP server status page](sample-pnp-status.png)
 
-**Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates subdirectory.
+**Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates' subdirectory.

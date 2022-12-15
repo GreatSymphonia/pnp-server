@@ -44,9 +44,9 @@ Each section contains
  !
 ```
 
-Create for each device a config file named serialnumber.cfg, i.e: [`FCZ094210DS.cfg`](sample.cfg)
+Create for each device a config file named serial number.cfg, i.e: [`FCZ094210DS.cfg`](sample.cfg)
 
-Place this script, the image(s) and the config files on a fileserver where the new devices can download them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
+Place this script, the image(s) and the config files on a file server where the new devices can download them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP.
 
 Last configure your DHCP server to have option 67 pointing to this script. Here a sample how to do this on a IOS/IOS-XE switch.
 
@@ -73,7 +73,7 @@ ip dhcp pool autoinstall
 !
 ```
 
-If the imgae you want to deliver fits on the swicth you can also use the switch to deliver the image via http.
+If the image you want to deliver fits on the switch you can also use the switch to deliver the image via http.
 **Note**: if you do so, you add the user authentication to your imgae/configuration source i.e. `http://update:update@192.168.10.1`
 
 ```
@@ -85,6 +85,12 @@ ip http path flash:
 !
 ```
 
-Now you are ready to attach your new devices to the network and switch it on. Wait till the autoinstall process is done. You can [follow the process on the syslog server or on the console](/autoinstall/sample_output.md), but dont touch anything.
+Now you are ready to attach your new devices to the network and switch it on. Wait till the autoinstall process is done. You can [follow the process on the syslog server or on the console](/autoinstall/sample_output.md), but don't touch anything.
 
-If everything works, your device gets an IP-address and the path to the script via DHCP, downloads the script, downloads the new image, sets the boot variable, downloads the config file, reboots and finishes the configuration. 
+If everything works, 
+ - your device gets an IP-address and the path to the script via DHCP
+ - downloads the script
+ - downloads the new image 
+ - sets the boot variable
+ - downloads the config file 
+ - reboots and finishes the configuration. 

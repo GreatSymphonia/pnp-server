@@ -19,7 +19,7 @@ This project is based on  https://github.com/cisco-ie/IOSXE_ZTP
 
 ## Prerequisites
 
-- Your devices needs to be ZTP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
+- Your devices need to be ZTP capable. This is true for most IOS-XE devices like ISR routers, Catalyst 9k Switches, 
 ASR routers and so on.
 - a file server to store the images, config files and the ztp script (recommended is an HTTP server)  
 - a DHCP server to provide IP configuration and option 67 to the new devices 
@@ -41,9 +41,9 @@ Modify the [**_ztp.py_**](ztp.py) script for your needs.
 - set the global variables
 
 Second place this script, the image(s) and configuration files on a file server where the new device(s) can download 
-them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP. You can [follow the process on the console](sample_output.md), but dont touch anything.
+them from. This can be a TFTP, HTTP(S), FTP or SCP server. For the image I would not recommend using TFTP. You can [follow the process on the console](sample_output.md), but don't touch anything.
 
-**Note:** To speed up the image transfer, put the image on an USB stick and connect them to the new device. The script will first look on `usb0:` to find the image file before downloding it from the file server.
+**Note:** To speed up the image transfer, put the image on a USB stick and connect them to the new device. The script will first look on `usb0:` to find the image file before downloading it from the file server.
 
 ### _software_images_ dictionary
 
@@ -90,7 +90,7 @@ Each entry in the _models_ dictionary contains
 - _log_to_file_: set to `False` to disable the creation of a logfile (default is `True`). The logfile is under `flash:/guest-share/ztp.log`.
 - _switch_to_install_mode_: set to `False` to use bundle mode by default, can be overridden in _models_/_software_images_ on the model or image level
 - _verbose_: if set to `True` the script will show each single exec/config command on the console by using 
-  `executep`/`configurep` insted of `execute`/`configure` 
+  `executep`/`configurep` instead of `execute`/`configure` 
 
 Sample global variables section
 ```    
@@ -113,7 +113,7 @@ A DHCP server is required for ZTP, as this is how the device learns about where 
 from. In our case, the DHCP server is the open source ISC DHCPd and the configuration file is at /etc/dhcp/dhcpd.conf 
 in a Linux developer box. The option bootfile-name is also known as option 67 and it specifies the python file ztp.py
 
-Below is a sample dhcpd.conf and someuseful commands for ISC DHCP server for your use. 
+Below is a sample dhcpd.conf and some useful commands for ISC DHCP server for your use. 
 ```    
     option domain-name "lab_name";
     default-lease-time 600;

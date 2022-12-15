@@ -33,32 +33,34 @@
 <h1>PnP Day0 status page</h1>
 <table>
     <tr>
+        <th><div class="rotate">Count</div></th>
         <th>Action</th>
-        <th>Serial number</th>
+        <th>Serial<br>number</th>
         <th>Platform</th>
-        <th>HW rev.</th>
+        <th>HW<br>rev.</th>
         <th>IP-Address</th>
-        <th>PnP Flow</th>
+        <th>PnP<br>flow</th>
         <th>Status</th>
-        <th>First seen</th>
-        <th>Last contact</th>
-        <th>Current job</th>
+        <th>First<br>seen</th>
+        <th>Last<br>contact</th>
+        <th>Current<br>job</th>
         <th>Current<br>version</th>
         <th>Target<br>version</th>
-        <th>Current image</th>
-        <th>Target image</th>
+        <th>Current<br>image</th>
+        <th>Target<br>image</th>
         <th>Size</th>
-        <th>Free space</th>
+        <th>Free<br>space</th>
         <th>Destination</th>
         <th>Error<br>code</th>
-        <th>Last error</th>
-        <th>Last Message</th>
+        <th>Last<br>error</th>
+        <th>Last<br>message</th>
         <th>Error<br>count</th>
         <th>Hard<br>error</th>
         <th>Backoff</th>
     </tr>
     {% for device in devices %}
     <tr>
+        <td style="text-align: center;"> {{ loop.index }}</td>
         <td>
             <form method="post" action="/buttons">
                 <input type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>

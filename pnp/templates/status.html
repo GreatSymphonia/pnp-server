@@ -11,9 +11,11 @@
             background-color: #d3cdcd;
             padding: 5px;
         }
+/*        .rotate { transform: rotate(-45deg); } */
         td {
             border: 1px solid #c5bfbf;
             padding: 5px;
+            text-align: center;
         }
         td.error {
             background-color: #dc143c;
@@ -33,32 +35,34 @@
 <h1>PnP Day0 status page</h1>
 <table>
     <tr>
-        <th>Action</th>
-        <th>Serial number</th>
-        <th>Platform</th>
-        <th>HW rev.</th>
-        <th>IP-Address</th>
-        <th>PnP Flow</th>
-        <th>Status</th>
-        <th>First seen</th>
-        <th>Last contact</th>
-        <th>Current job</th>
-        <th>Current<br>version</th>
-        <th>Target<br>version</th>
-<!--        <th>Current image</th>-->
-<!--        <th>Target image</th>-->
-<!--        <th>Size</th>-->
-<!--        <th>Free space</th>-->
-<!--        <th>Destination</th>-->
-        <th>Error<br>code</th>
-        <th>Last error</th>
-        <th>Last Message</th>
-        <th>Error<br>count</th>
-        <th>Hard<br>error</th>
-<!--        <th>Backoff</th>-->
+        <th><div class="rotate">Count</div></th>
+        <th><div class="rotate">Action</div></th>
+        <th><div class="rotate">Serial<br>number</div></th>
+        <th><div class="rotate">Platform</div></th>
+        <th><div class="rotate">HW<br>rev.</div></th>
+        <th><div class="rotate">IP-Address</div></th>
+        <th><div class="rotate">PnP<br>flow</div></th>
+        <th><div class="rotate">Status</div></th>
+        <th><div class="rotate">First<br>seen</div></th>
+        <th><div class="rotate">Last<br>contact</div></th>
+        <th><div class="rotate">Current<br>job</div></th>
+        <th><div class="rotate">Current<br>version</div></th>
+        <th><div class="rotate">Target<br>version</div></th>
+<!--        <th><div class="rotate">Current<br>image</div></th>-->
+<!--        <th><div class="rotate">Target<br>image</div></th>-->
+<!--        <th><div class="rotate">Size</div></th>-->
+<!--        <th><div class="rotate">Free space</div></th>-->
+<!--        <th><div class="rotate">Destination</div></th>-->
+        <th><div class="rotate">Error<br>code</div></th>
+        <th><div class="rotate">Last<br>error</div></th>
+        <th><div class="rotate">Last<br>message</div></th>
+        <th><div class="rotate">Error<br>count</div></th>
+        <th><div class="rotate">Hard<br>error</div></th>
+<!--        <th><div class="rotate">Backoff</div></th>-->
     </tr>
     {% for device in devices %}
     <tr>
+        <td style="text-align: center;"> {{ loop.index }}</td>
         <td>
             <form method="post" action="/buttons">
                 <input type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>

@@ -14,16 +14,21 @@
 #
 # Cisco doc on https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/
 #
+# 20-12-14: added count in status page
+#           added check if image/config file available
+# 20-12-15: renamed ./vars/vars.py to ./vars/settings.py
+#           stop on import error for images.py and platforms.py
+#           removed extending path variable to ./vars
 
 import re
 from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
 from pathlib import Path
-import sys
 import xmltodict
-import time
+from time import strftime
 from typing import Optional, List, Dict, Any
 import logging
 from logging.handlers import RotatingFileHandler
+from requests import head
 
 try:
     from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
@@ -47,14 +52,17 @@ IMAGES = {}
 PLATFORMS = {}
 
 # import global variables
-sys.path.append('./vars')
 try:
-    from vars import *
-    from images import *
-    from platforms import *
+    from vars.settings import *
 except ModuleNotFoundError:
     pass
 
+try:
+    from vars.images import *
+    from vars.platforms import *
+except ModuleNotFoundError as e:
+    print(f'{e}')
+    exit(1)
 
 CONFIG_BASE_URL = CONFIG_BASE_URL.rstrip('/')
 IMAGE_BASE_URL = IMAGE_BASE_URL.rstrip('/')
@@ -66,6 +74,8 @@ class ErrorCodes:
         100: 'unknown platform',
         101: 'no free space for update',
         102: 'unknown image',
+        103: 'config file not found',
+        104: 'image file not found',
 
         1412: ' Invalid input detected (config)',
         1413: 'Invalid input detected',
@@ -81,6 +91,8 @@ class ErrorCodes:
         self.ERROR_NO_PLATFORM = 100
         self.ERROR_NO_FREE_SPACE = 101
         self.ERROR_NO_IMAGE = 102
+        self.ERROR_NO_CFG_FILE = 103
+        self.ERROR_NO_IMAGE_FILE = 104
 
         self.PNP_ERROR_INVALID_CONFIG = 1412
         self.PNP_ERROR_INVALID_INPUT = 1413
@@ -153,7 +165,7 @@ class Device:
         self.version: str = ''
         self.image: str = ''
         self.destination_name: str = ''
-        self.destination_free: int = 0
+        self.destination_free: Optional[int] = None
         self.__pnp_flow: int = PNPFLOW.NEW
         self.pnp_flow_readable: str = PNPFLOW.readable(PNPFLOW.NEW)
         self.target_image: Optional[SoftwareImage] = None
@@ -251,14 +263,12 @@ def configure_logger(path):
 
 
 def log_info(message):
-    # print(time.asctime() + ' :: INFO :: ' + message)
     if LOG_TO_FILE:
         log = logging.getLogger('root')
         log.info(message)
 
 
 def log_critical(message):
-    # print(time.asctime() + ' :: CRIT :: ' + message)
     if LOG_TO_FILE:
         log = logging.getLogger('root')
         log.critical(message)
@@ -317,42 +327,52 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
     return _template
 
 
-def pnp_install_image(udi: str, correlator: str) -> str:
+def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    device.current_job = 'urn:cisco:pnp:image-install'
-    device.pnp_flow = PNPFLOW.UPDATE_START
-    device.backoff = True
-    device.refresh_data = True
-    jinja_context = {
-        'udi': udi,
-        'correlator': correlator,
-        'base_url': IMAGE_BASE_URL,
-        'image': device.target_image.image,
-        'md5': device.target_image.md5,
-        'destination': device.destination_name,
-        'delay': 0,  # reload in seconds
-    }
-    _template = render_template('image_install.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
-    return _template
+    response = head(f'{IMAGE_BASE_URL}/{device.target_image.image}')
+    if response.status_code == 200:
+        device.current_job = 'urn:cisco:pnp:image-install'
+        device.pnp_flow = PNPFLOW.UPDATE_START
+        device.backoff = True
+        device.refresh_data = True
+        jinja_context = {
+            'udi': udi,
+            'correlator': correlator,
+            'base_url': IMAGE_BASE_URL,
+            'image': device.target_image.image,
+            'md5': device.target_image.md5,
+            'destination': device.destination_name,
+            'delay': 0,  # reload in seconds
+        }
+        _template = render_template('image_install.xml', **jinja_context)
+        if DEBUG:
+            log_info(_template)
+        return _template
+    else:
+        device.error_code = ERROR.ERROR_NO_IMAGE_FILE
+        device.hard_error = True
 
 
-def pnp_config_upgrade(udi: str, correlator: str) -> str:
+def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    device.current_job = 'urn:cisco:pnp:device-info'
-    device.pnp_flow = PNPFLOW.CONFIG_START
-    jinja_context = {
-        'udi': udi,
-        'correlator': correlator,
-        'base_url': CONFIG_BASE_URL,
-        'serial_number': device.serial,
-        'delay': 0,  # reload in seconds
-    }
-    _template = render_template('config_upgrade.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
-    return _template
+    response = head(f'{CONFIG_BASE_URL}/{device.serial}.cfg')
+    if response.status_code == 200:
+        device.current_job = 'urn:cisco:pnp:device-info'
+        device.pnp_flow = PNPFLOW.CONFIG_START
+        jinja_context = {
+            'udi': udi,
+            'correlator': correlator,
+            'base_url': CONFIG_BASE_URL,
+            'serial_number': device.serial,
+            'delay': 0,  # reload in seconds
+        }
+        _template = render_template('config_upgrade.xml', **jinja_context)
+        if DEBUG:
+            log_info(_template)
+        return _template
+    else:
+        device.error_code = ERROR.ERROR_NO_CFG_FILE
+        device.hard_error = True
 
 
 def pnp_bye(udi: str, correlator: str) -> str:
@@ -373,8 +393,8 @@ def create_new_device(udi: str, src_add: str):
     platform, hw_rev, serial = SERIAL_NUM_RE.findall(udi)[0]
     devices[udi] = Device(
         udi=udi,
-        first_seen=time.strftime(TIME_FORMAT),
-        last_contact=time.strftime(TIME_FORMAT),
+        first_seen=strftime(TIME_FORMAT),
+        last_contact=strftime(TIME_FORMAT),
         src_address=src_add,
         serial=serial,
         platform=platform,
@@ -404,7 +424,7 @@ def update_device_info(data: Dict[str, Any]):
     device.version = data['pnp']['response']['imageInfo']['versionString']
     device.image = data['pnp']['response']['imageInfo']['imageFile'].split(':')[1]
     device.refresh_data = False
-    device.last_contact = time.strftime(TIME_FORMAT)
+    device.last_contact = strftime(TIME_FORMAT)
     for filesystem in data['pnp']['response']['fileSystemList']['fileSystem']:
         if filesystem['@name'] in ['bootflash', 'flash']:
             destination = filesystem
@@ -507,7 +527,7 @@ def pnp_work_request():
     udi = data['pnp']['@udi']
     if udi in devices.keys():
         device = devices[udi]
-        device.last_contact = time.strftime(TIME_FORMAT)
+        device.last_contact = strftime(TIME_FORMAT)
         device.ip_address = src_add
         if device.hard_error:
             return Response(pnp_backoff(udi, correlator, 59), mimetype='text/xml')
@@ -569,7 +589,7 @@ def pnp_work_response():
 
     device = devices[udi]
     device.ip_address = src_add
-    device.last_contact = time.strftime(TIME_FORMAT)
+    device.last_contact = strftime(TIME_FORMAT)
 
     if job_type == 'urn:cisco:pnp:fault':  # error without job info (correlator):-(
         device.error = data['pnp']['response']['fault']['detail']['XSVC-ERR:error']['XSVC-ERR:details']
