@@ -22,6 +22,12 @@ IMAGES = {
         md5='0e4b1fc1448f8ee289634a41f75dc215',
         size=1,
     ),
+    'C1000_15_02': SoftwareImage(
+        image='c1000-universalk9-mz.152-7.E7.bin',
+        version='15.2(7)E7',
+        md5='1e6f508499c36434f7035b83a4018390',
+        size=16499712,
+    ),
     'C1100_16_12': SoftwareImage(
         image='c1100-universalk9.16.12.01a.SPA.bin',
         version='16.12.1a',
