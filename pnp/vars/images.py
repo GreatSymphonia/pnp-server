@@ -94,4 +94,10 @@ IMAGES = {
         md5='b3efb230d869fa6e77a98b4130c89585',
         size=684976080,
     ),
+    'C3560CX': SoftwareImage(
+        image='c3560cx-universalk9-mz.152-7.E7.bin',
+        version='15.2(7)E7',
+        md5='1c4c0597d355a0926c3d7198c1167cae',
+        size=22967296,
+    ),
 }

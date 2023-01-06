@@ -24,4 +24,7 @@ PLATFORMS = {
     'C1000-8T-2G-L': Model(
         image='C1000_15_02',
     ),
+    'WS-C3560CX-12PD-S': Model(
+        image='C3560CX',
+    ),
 }
