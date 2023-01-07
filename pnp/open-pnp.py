@@ -77,7 +77,7 @@ class ErrorCodes:
         103: 'config file not found',
         104: 'image file not found',
 
-        1412: ' Invalid input detected (config)',
+        1412: 'Invalid input detected (config)',
         1413: 'Invalid input detected',
         1609: 'Error while retrieving device filesystem info',
         1816: 'Error verifying checksum for Image',
@@ -340,7 +340,7 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
             'correlator': correlator,
             'base_url': IMAGE_BASE_URL,
             'image': device.target_image.image,
-            'md5': device.target_image.md5,
+            'md5': device.target_image.md5.lower(),
             'destination': device.destination_name,
             'delay': 0,  # reload in seconds
         }
