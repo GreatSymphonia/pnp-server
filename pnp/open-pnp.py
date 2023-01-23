@@ -364,7 +364,7 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
             'correlator': correlator,
             'base_url': CONFIG_BASE_URL,
             'serial_number': device.serial,
-            'delay': 0,  # reload in seconds
+            'delay': 30,  # reload in seconds
         }
         _template = render_template('config_upgrade.xml', **jinja_context)
         if DEBUG:
