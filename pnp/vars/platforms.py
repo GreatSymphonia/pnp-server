@@ -27,7 +27,13 @@ PLATFORMS = {
     'C1000-24P-4G-L': Model(
         image='C1000_15_02',
     ),
+    'C1000-24T-4G-L': Model(
+        image='C1000_15_02',
+    ),
     'C1000-24T-4X-L': Model(
+        image='C1000_15_02',
+    ),
+    'C1000-48P-4G-L': Model(
         image='C1000_15_02',
     ),
     'C1000-48T-4X-L': Model(

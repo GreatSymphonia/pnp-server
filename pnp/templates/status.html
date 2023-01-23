@@ -64,9 +64,11 @@
     <tr>
         <td style="text-align: center;"> {{ loop.index }}</td>
         <td>
+<!--    
             <form method="post" action="/buttons">
                 <input type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>
-            </form>
+            </form> 
+-->
               <form method="post" action="/buttons">
                 <input type="submit" value="Remove" name="{{ device.udi }}"/>
             </form>
