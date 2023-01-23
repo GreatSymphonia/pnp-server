@@ -24,6 +24,15 @@ PLATFORMS = {
     'C1000-8T-2G-L': Model(
         image='C1000_15_02',
     ),
+    'C1000-24P-4G-L': Model(
+        image='C1000_15_02',
+    ),
+    'C1000-24T-4X-L': Model(
+        image='C1000_15_02',
+    ),
+    'C1000-48T-4X-L': Model(
+        image='C1000_15_02',
+    ),
     'WS-C3560CX-12PD-S': Model(
         image='C3560CX',
     ),
