@@ -177,7 +177,7 @@ class Device:
         self.error_count: int = 0
         self.error_message = ''
         self.__hard_error: bool = False
-        self.__status_class: str = ''
+        self.__status: str = ''
 
     @property
     def pnp_flow(self) -> int:
@@ -188,7 +188,7 @@ class Device:
         self.__pnp_flow = pnp_flow
         self.pnp_flow_readable = PNPFLOW.readable(pnp_flow)
         if pnp_flow == PNPFLOW.FINISHED:
-            self.__status_class = 'finished'
+            self.__status = 'finished'
 
     @property
     def refresh_data(self) -> bool:
@@ -210,7 +210,7 @@ class Device:
     def error_code(self, error_code: int):
         self.__error_code = error_code
         self.error_code_readable = ERROR.readable(error_code)
-        self.__status_class = 'warning'
+        self.__status = 'warning'
 
     @property
     def hard_error(self) -> bool:
@@ -219,15 +219,15 @@ class Device:
     @hard_error.setter
     def hard_error(self, hard_error: bool):
         self.__hard_error = hard_error
-        self.__status_class = 'error'
+        self.__status = 'error'
 
     @property
-    def status_class(self) -> str:
-        return self.__status_class
+    def status(self) -> str:
+        return self.__status
 
-    @status_class.setter
-    def status_class(self, status_class: str):
-        self.__status_class = status_class
+    @status.setter
+    def status(self, status: str):
+        self.__status = status
 
 
 app = Flask(__name__, template_folder='./templates')
@@ -315,7 +315,7 @@ def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
 def pnp_backoff_terminate(udi: str, correlator: str) -> str:
     device = devices[udi]
     device.status = f'finished'
-    device.pnp_floe = PNPFLOW.FINISHED
+    device.pnp_flow = PNPFLOW.FINISHED
     device.current_job = 'urn:cisco:pnp:backoff-terminate'
     jinja_context = {
         'udi': udi,

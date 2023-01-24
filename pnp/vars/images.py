@@ -10,6 +10,12 @@ class SoftwareImage:
 
 
 IMAGES = {
+    'dummy': SoftwareImage(
+        image='your_image_name.bin',
+        version='0.0.0',
+        md5='fdb9c92bae37f9130d0ee6761afe2919',
+        size=9999999999,
+    ),
     'CAT9K': SoftwareImage(
         image='cat9k_iosxe.17.06.01.SPA.bin',
         version='17.6.1',

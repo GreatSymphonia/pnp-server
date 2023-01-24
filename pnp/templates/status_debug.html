@@ -25,8 +25,6 @@
             background-color: #7cfc00;
         }
         input { width: 70px; }
-
-
     </style>
 </head>
 <body>
@@ -69,7 +67,7 @@
                 <input type="submit" value="Remove" name="{{ device.udi }}"/>
             </form>
         </td>
-        <td class="{{ device.status_class}}"><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{ device.serial }}</a></td>
+        <td class="{{ device.status}}"><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{ device.serial }}</a></td>
         <td>{{ device.platform }}</td>
         <td>{{ device.hw_rev }}</td>
         <td>{{ device.ip_address }}</td>

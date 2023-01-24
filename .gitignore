@@ -1,7 +1,7 @@
 # config files
-pnp/configs/*.cfg
+pnp/configs/*
 # image files
-pnp/images/*.bin
+pnp/images/*
 # log files
 pnp/log/
 
