@@ -18,16 +18,19 @@ ASR routers and so on.
 
 ## How to use
 
+---
 ### IOS-XE Images
 Place the IOS-XE images on an HTTP server where the new devices can download them. If you use this PnP server to provide the `images` place them in the images' subdirectory. For the images I would recommend using a _real_ HTTP server.
 
+---
 ### Configuration files
-Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server, so the new devices can download them. In cas the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
+Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](pnp/configs/FGL223590FL.cfg). Place the configuration files also on your HTTP server, so the new devices can download them. In case the PnP server should deliver the configuration files, copy them in the `configs` subdirectory.
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
 **Note**: the PnP server runs on HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
 
+---
 ### Install the PnP server:
 
 on Linux
@@ -67,10 +70,12 @@ c:\>git clone https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provisi
 c:\>cd cisco_day0_provision\pnp
 c:\cisco_day0_provision\pnp>python -m venv .venv
 c:\cisco_day0_provision\pnp>.venv\Scripts\activate.bat
+
 (.venv)c:\cisco_day0_provision\pnp>pip install flask
 (.venv)c:\cisco_day0_provision\pnp>pip install xmltodict
 (.venv)c:\cisco_day0_provision\pnp>pip install requests
 (.venv)c:\cisco_day0_provision\pnp>pip install python-dotenv
+
 (.venv)c:\cisco_day0_provision\pnp>python open-pnp.py
 
 Running PnP server. Stop with ctrl+c
@@ -87,23 +92,22 @@ You can check if the PnP server is running by opening a web browser and accessin
 
 ![PnP server new status page](pnp-empty-status.png)
 
-
+---
 ### Configure the PnP server
 
-to use the PnP server you need to configure the server by modifying the 
+to use the PnP server you need to configure the server by modifying the following files
 
-- [**_settings.py_**](/pnp/vars/settings.py)
-- [**_images.py_**](/pnp/vars/images.py)
-- [**_platforms.py_**](/pnp/vars/platforms.py)
+- [**_settings.py_**](/pnp/open-pnp.ini)
+- [**_images.py_**](/pnp/images.json)
 
-files in the `vars` subdirectory.
+**NOTE**: after changing the PnP server configuration you need to restart the PnP server.
 
-**Note**: after changing the PnP server configuration you need to restart the PnP server.
-
-#### Global variables in [**_settings.py_**](/pnp/vars/settings.py)
+---
+#### Global variables in [**open-pnp.ini_**](/pnp/open-pnp.ini)
 
 ```
-# BIND_PNP_SERVER = ::'
+[settings]
+# BIND_PNP_SERVER = '0.0.0.0'
 # PORT = 8080
 # TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 # STATUS_REFRESH = 60
@@ -112,50 +116,46 @@ files in the `vars` subdirectory.
 # LOG_FILE = 'log/pnp_debug.log'
 IMAGE_BASE_URL = 'http://192.168.10.133:8080/images'
 CONFIG_BASE_URL = 'http://192.168.10.133:8080/configs'
+# IMAGE_DATA = 'images.json'
 ```
 
-- **BIND_PNP_SERVER**: the IP-address of your python box
+- **BIND_PNP_SERVER**: the IP-address of your open-pnp server box. (Use `'::'` for IPv6)
 - **PORT**: the TCP port the server should listen on (remember for port 80 the server needs to run as root)
 - **TIME_FORMAT**: the time format used in the status page
 - **STATUS_REFRESH**: the interval in seconds the status page will automatically reload
-- **DEBUG**: enable debug output with `DEBUG=True`
+- **DEBUG**: enable debug output with `DEBUG = True`. Can be `True` or `False`.
 - **LOG_FILE**: path/name of the log file
-- **LOG_TO_FILE**: write log output to file
-- **IMAGE_BASE_URL**: the base URL for your images (without `/` at the end)
-- **CONFIG_BASE_URL**: the base URL for your configuration files (without `/` at the end)
+- **LOG_TO_FILE**: write log output to file. Can be `True` or `False`.
+- **IMAGE_BASE_URL**: the base URL for your images 
+- **CONFIG_BASE_URL**: the base URL for your configuration files
+- **IMAGE_DATA**: the file containing the data of your IOS/IOS-XE images
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
-#### _IMAGES_ dictionary in [**_images.py_**](/pnp/vars/images.py)
+---
+#### _IMAGES_ dictionary in [**_images.json_**](/images.json)
 
 Each entry in the _IMAGES_ dictionary contains
-- a unique name, i.e., the product family + version
-- the name of the IOS-XE image file
-- the IOS-XE version of the image
-- the md5 sum of the IOS-XE image file
-- the size of the IOS-XE image file in bytes
+- the **name** of the image file as key
+- the IOS/IOS-XE **version** of the image
+- the **md5** checksum of the image file
+- the **size** of the image file in bytes
+- a list of **models** where that image should be used
 
 ```
-'C1100_17_06_04': SoftwareImage(
-    image='c1100-universalk9.17.06.04.SPA.bin',
-    version='17.06.04',
-    md5_image='2caa962f5ed0ecc52f99b90c733c54de',
-    size=651402492,
-)
+    "c1000-universalk9-mz.152-7.E7.bin": {
+        "version": "15.2(7)E7",
+        "md5": "1e6f508499c36434f7035b83a4018390",
+        "size": 16499712,
+        "models": ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L", "C1000-48P-4G-L", "C1000-48T-4X-L"]
+    }
 ```
 
-#### _PLATFORMS_ dictionary in [**_platforms.py_**](/pnp/vars/platforms.py)
+**NOTE:** By default _open-pnp_ expects the image data in _images.json_. You can change this with the key _IMAGE_DATA_ in _settings.ini_.
 
-Each entry in the _PLATFORMS_ dictionary contains
-- a unique name that exactly matches the model name (PID) of the device
-- a pointer to the image for this model in the _IMAGES_ dictionary
+**NOTE:** this file needs to be in valid json format.
 
-```
-'C1117-4PMLTEEAWE': Model(
-    image='C1100_17_06_04',
-)
-```
-
+---
 ### PnP server discovery
 The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Replaced _your.domain_ by the DNS domain the device receives via DHCP. With DHCP, the DHCP server needs to send the vendor option 43.
 
@@ -180,6 +180,7 @@ ip dhcp pool autoinstall
 ```
 For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
 
+---
 ### PnP Status page
 
 You can monitor the PnP progress on the PnP server status page.

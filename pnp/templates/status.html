@@ -11,7 +11,6 @@
             background-color: #d3cdcd;
             padding: 5px;
         }
-/*        .rotate { transform: rotate(-45deg); } */
         td {
             border: 1px solid #c5bfbf;
             padding: 5px;
@@ -33,35 +32,36 @@
 </head>
 <body>
 <h1>PnP Day0 status page</h1>
-        <form method="post" action="/buttons">
-            <input type="submit" value="Reload" name="reload_data"/>
-        </form>
+<!-- ToDo: find a nice place for the rload (data) button -->
+<form method="post" action="/buttons">
+    <input type="submit" value="Reload" name="reload_data"/>
+</form>
 <table>
     <tr>
-        <th><div class="rotate">Count</div></th>
-        <th><div class="rotate">Action</div></th>
-        <th><div class="rotate">Serial<br>number</div></th>
-        <th><div class="rotate">Platform</div></th>
-        <th><div class="rotate">HW<br>rev.</div></th>
-        <th><div class="rotate">IP-Address</div></th>
-        <th><div class="rotate">PnP<br>flow</div></th>
-        <th><div class="rotate">Status</div></th>
-        <th><div class="rotate">First<br>seen</div></th>
-        <th><div class="rotate">Last<br>contact</div></th>
-        <th><div class="rotate">Current<br>job</div></th>
-        <th><div class="rotate">Current<br>version</div></th>
-        <th><div class="rotate">Target<br>version</div></th>
-<!--        <th><div class="rotate">Current<br>image</div></th>-->
-<!--        <th><div class="rotate">Target<br>image</div></th>-->
-<!--        <th><div class="rotate">Size</div></th>-->
-<!--        <th><div class="rotate">Free space</div></th>-->
-<!--        <th><div class="rotate">Destination</div></th>-->
-        <th><div class="rotate">Error<br>code</div></th>
-        <th><div class="rotate">Last<br>error</div></th>
-        <th><div class="rotate">Last<br>message</div></th>
-        <th><div class="rotate">Error<br>count</div></th>
-        <th><div class="rotate">Hard<br>error</div></th>
-<!--        <th><div class="rotate">Backoff</div></th>-->
+        <th>Count</th>
+        <th>Action</th>
+        <th>Serial<br>number</th>
+        <th>Platform</th>
+        <th>HW<br>rev.</th>
+        <th>IP-Address</th>
+        <th>PnP<br>flow</th>
+        <th>Status</th>
+        <th>First<br>seen</th>
+        <th>Last<br>contact</th>
+        <th>Current<br>job</th>
+        <th>Current<br>version</th>
+        <th>Target<br>version</th>
+<!--        <th>Current<br>image</th>-->
+<!--        <th>Target<br>image</th>-->
+<!--        <th>Size</th>-->
+<!--        <th>Free space</th>-->
+<!--        <th>Destination</th>-->
+        <th>Error<br>code</th>
+        <th>Last<br>error</th>
+        <th>Last<br>message</th>
+        <th>Error<br>count</th>
+        <th>Hard<br>error</th>
+<!--        <th>Backoff</th>-->
     </tr>
     {% for device in devices %}
     <tr>

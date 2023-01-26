@@ -20,17 +20,18 @@
 #           stop on import error for images.py and platforms.py
 #           removed extending path variable to ./vars
 
-import re
+from re import compile as re_compile
 from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
 from pathlib import Path
-import xmltodict
+from xmltodict import parse as xml_parse
 from time import strftime
 from typing import Optional, List, Dict, Any
 import logging
 from logging.handlers import RotatingFileHandler
 from requests import head
-# import importlib
-# import sys
+from json import load as json_load
+from json.decoder import JSONDecodeError
+from configparser import ConfigParser
 
 
 try:
@@ -40,53 +41,26 @@ except ModuleNotFoundError:
     _netifaces = False
     pass
 
-
-BIND_PNP_SERVER = '0.0.0.0'
-PORT = 8080
-TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
-STATUS_REFRESH = 60
-DEBUG = False
-LOG_TO_FILE = True
-LOG_FILE = 'log/pnp_debug.log'
-IMAGE_BASE_URL = ''
-CONFIG_BASE_URL = ''
-
-IMAGES = {}
-PLATFORMS = {}
-
-try:
-    from vars.settings import *
-    # (
-    #     BIND_PNP_SERVER,
-    #     PORT,
-    #     TIME_FORMAT,
-    #     STATUS_REFRESH,
-    #     DEBUG,
-    #     LOG_TO_FILE,
-    #     LOG_FILE,
-    #     IMAGE_BASE_URL,
-    #     CONFIG_BASE_URL,
-    # )
-except (ModuleNotFoundError, ImportError):
-    pass
-
-try:
-    from vars.images import (
-        SoftwareImage,
-        IMAGES,
-    )
-    from vars.platforms import (
-        Model,
-        PLATFORMS,
-    )
-except ModuleNotFoundError as e:
-    print(f'{e}')
-    exit(1)
+# devine global variables
+IMAGE_DATA = None       # 'images.json'
+BIND_PNP_SERVER = None  # '0.0.0.0'
+PORT = None             # 8080
+TIME_FORMAT = None      # '%Y-%m-%dT%H:%M:%S'
+STATUS_REFRESH = None   # 60
+DEBUG = None            # False
+LOG_TO_FILE = None      # True
+LOG_FILE = None         # 'log/pnp_debug.log'
+IMAGE_BASE_URL = None   # ''
+CONFIG_BASE_URL = None  # ''
+IMAGES = None           # {}
 
 
-CONFIG_BASE_URL = CONFIG_BASE_URL.rstrip('/')
-IMAGE_BASE_URL = IMAGE_BASE_URL.rstrip('/')
-
+class SoftwareImage:
+    def __init__(self, image: str, version: str, md5: str, size: int,):
+        self.image: str = image
+        self.version: str = version
+        self.md5: str = md5
+        self.size: int = size
 
 class ErrorCodes:
     __readable = {
@@ -294,6 +268,48 @@ def log_critical(message):
         log.critical(message)
 
 
+def load_data():
+    global IMAGES
+    global IMAGE_DATA
+    global BIND_PNP_SERVER
+    global PORT
+    global TIME_FORMAT
+    global STATUS_REFRESH
+    global DEBUG
+    global LOG_TO_FILE
+    global LOG_FILE
+    global IMAGE_BASE_URL
+    global CONFIG_BASE_URL
+
+    config = ConfigParser()
+    config.read('open-pnp.ini')
+    
+    IMAGE_DATA = config['settings'].get('IMAGE_DATA', 'images.json')
+    BIND_PNP_SERVER = config['settings'].get('BIND_PNP_SERVER', '0.0.0.0') 
+    TIME_FORMAT = config['settings'].get('TIME_FORMAT', '%Y-%m-%dT%H:%M:%S')
+    LOG_FILE = config['settings'].get('LOG_FILE', 'log/pnp_debug.log')
+    IMAGE_BASE_URL = config['settings'].get('IMAGE_BASE_URL', '').rstrip('/')
+    CONFIG_BASE_URL = config['settings'].get('CONFIG_BASE_URL', '').rstrip('/')
+    #
+    PORT = config['settings'].get('PORT', '8080')
+    STATUS_REFRESH = config['settings'].get('STATUS_REFRESH', '60')
+    #
+    PORT = int(PORT) if PORT.isdigit() else 8080
+    STATUS_REFRESH = int(STATUS_REFRESH) if STATUS_REFRESH.isdigit() else 60
+    #
+    DEBUG = True if config['settings'].get('DEBUG', 'False') == 'True' else False
+    LOG_TO_FILE = True if config['settings'].get('LOG_TO_FILE', 'True') == 'True' else False
+
+    try:
+        with open(IMAGE_DATA, 'r') as f:
+            IMAGES = json_load(f)
+    except FileNotFoundError as e:
+        print(f'ERROR: Data file {IMAGE_DATA} not found! ({e})')
+        exit(1)
+    except JSONDecodeError as e:
+        print(f'ERROR: Data file {IMAGE_DATA} is not valid json! ({e})')
+        exit(2)
+
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
     # info_type can be one of:
     # image, hardware, filesystem, udi, profile, all
@@ -406,7 +422,7 @@ def pnp_bye(udi: str, correlator: str) -> str:
     return _template
 
 
-SERIAL_NUM_RE = re.compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
+SERIAL_NUM_RE = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
 
 
 def create_new_device(udi: str, src_add: str):
@@ -423,15 +439,16 @@ def create_new_device(udi: str, src_add: str):
     )
     device = devices[udi]
     device.backoff = True
-    if device.platform in PLATFORMS:
-        platform = PLATFORMS[device.platform]
-        if platform.image in IMAGES:
-            device.target_image = IMAGES[platform.image]
-        else:
-            device.error_code = ERROR.ERROR_NO_IMAGE
-            device.hard_error = True
-    else:
-        device.error_code = ERROR.ERROR_NO_PLATFORM
+    for image, image_data in IMAGES.items():
+        if platform in image_data['models']:
+            device.target_image = SoftwareImage(
+                image=image,
+                version=image_data['version'],
+                md5=image_data['md5'],
+                size=image_data['size']
+            )
+    if not device.target_image:
+        device.error_code = ERROR.ERROR_NO_IMAGE
         device.hard_error = True
 
 
@@ -483,10 +500,6 @@ def get_local_ip_addresses() -> List[str]:
     return _addresses
 
 
-def reload_data():
-    pass
-
-
 @app.route('/')
 def root():
     return redirect('/status', 302)
@@ -516,7 +529,7 @@ def buttons():
     button = list(request.form.values())[0]
 
     if button == 'Reload':
-        reload_data()
+        load_data()
 
     if udi in devices.keys():
         device = devices[udi]
@@ -547,7 +560,7 @@ def pnp_hello():
 @app.route('/pnp/WORK-REQUEST', methods=['POST'])
 def pnp_work_request():
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-    data = xmltodict.parse(request.data)
+    data = xml_parse(request.data)
     if DEBUG:
         log_info(f'REQUEST: {data}')
     correlator = data['pnp']['info']['@correlator']
@@ -605,7 +618,7 @@ def pnp_work_request():
 
 @app.route('/pnp/WORK-RESPONSE', methods=['POST'])
 def pnp_work_response():
-    data = xmltodict.parse(request.data)
+    data = xml_parse(request.data)
     if DEBUG:
         log_info(f'RESPONSE: {data}')
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
@@ -666,6 +679,8 @@ def pnp_work_response():
 
 
 if __name__ == '__main__':
+    load_data()
+
     if IMAGE_BASE_URL == '':
         print('IMAGE_BASE_URL not set, check ./vars/vars.py')
         exit(1)
