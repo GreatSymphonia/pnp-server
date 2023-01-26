@@ -29,6 +29,9 @@ from typing import Optional, List, Dict, Any
 import logging
 from logging.handlers import RotatingFileHandler
 from requests import head
+# import importlib
+# import sys
+
 
 try:
     from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
@@ -51,18 +54,35 @@ CONFIG_BASE_URL = ''
 IMAGES = {}
 PLATFORMS = {}
 
-# import global variables
 try:
     from vars.settings import *
-except ModuleNotFoundError:
+    # (
+    #     BIND_PNP_SERVER,
+    #     PORT,
+    #     TIME_FORMAT,
+    #     STATUS_REFRESH,
+    #     DEBUG,
+    #     LOG_TO_FILE,
+    #     LOG_FILE,
+    #     IMAGE_BASE_URL,
+    #     CONFIG_BASE_URL,
+    # )
+except (ModuleNotFoundError, ImportError):
     pass
 
 try:
-    from vars.images import *
-    from vars.platforms import *
+    from vars.images import (
+        SoftwareImage,
+        IMAGES,
+    )
+    from vars.platforms import (
+        Model,
+        PLATFORMS,
+    )
 except ModuleNotFoundError as e:
     print(f'{e}')
     exit(1)
+
 
 CONFIG_BASE_URL = CONFIG_BASE_URL.rstrip('/')
 IMAGE_BASE_URL = IMAGE_BASE_URL.rstrip('/')
@@ -463,6 +483,10 @@ def get_local_ip_addresses() -> List[str]:
     return _addresses
 
 
+def reload_data():
+    pass
+
+
 @app.route('/')
 def root():
     return redirect('/status', 302)
@@ -490,6 +514,9 @@ def status():
 def buttons():
     udi = list(request.form.keys())[0]
     button = list(request.form.values())[0]
+
+    if button == 'Reload':
+        reload_data()
 
     if udi in devices.keys():
         device = devices[udi]
