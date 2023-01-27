@@ -4,7 +4,7 @@
         <config details="all">
             <copy>
                 <source>
-                    <location>{{ base_url }}/{{ serial_number }}.cfg</location>
+                    <location>{{ base_url }}/{{ cfg_file }}</location>
                 </source>
             </copy>
             <!-- <applyto>startup</applyto> -->  <!-- don't now where to place this -->

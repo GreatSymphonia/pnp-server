@@ -1,0 +1,11 @@
+2022-12-14: added count in status page
+            added check if image/config file is available
+2022-12-15: renamed ./vars/vars.py to ./vars/settings.py
+            stop on import error for images.py and platforms.py
+            removed extending path variable to ./vars
+2023-01-26: reorg platforms.py and images.py in images.json
+            reorg settings.py in open-pnp.ini
+            remove imports for platforms.py/images.py/settings.py
+            added reload data function
+            changed open-pnp.ini/images.json to open-pnp.toml/images.toml for better handling
+2023-01-27: added default IOS/IOS-XE config file fallback

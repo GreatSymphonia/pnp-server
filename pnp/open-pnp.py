@@ -14,12 +14,17 @@
 #
 # Cisco doc on https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/
 #
-# 20-12-14: added count in status page
-#           added check if image/config file available
-# 20-12-15: renamed ./vars/vars.py to ./vars/settings.py
-#           stop on import error for images.py and platforms.py
-#           removed extending path variable to ./vars
-#           changed open-pnp.ini/images.json to toml (better to handle)
+# 2022-12-14: added count in status page
+#             added check if image/config file is available
+# 2022-12-15: renamed ./vars/vars.py to ./vars/settings.py
+#             stop on import error for images.py and platforms.py
+#             removed extending path variable to ./vars
+# 2023-01-26: reorg platforms.py and images.py in images.json
+#             reorg settings.py in open-pnp.ini
+#             remove imports for platforms.py/images.py/settings.py
+#             added reload data function
+#             changed open-pnp.ini/images.json to open-pnp.toml/images.toml for better handling
+# 2023-01-27: added default IOS/IOS-XE config file fallback
 #
 
 # pip install flask xmltodict requests ifaddr tomli
@@ -52,6 +57,7 @@ LOG_FILE: Optional[str] = None           # 'log/pnp_debug.log'
 IMAGES: Optional[Dict[str, any]] = None  # {}
 IMAGE_BASE_URL: Optional[str] = None     # ''
 CONFIG_BASE_URL: Optional[str] = None    # ''
+DEFAULT_CFG_FILE: Optional[str] = None   # 'DEFAULT.cfg'
 
 
 class SoftwareImage:
@@ -281,11 +287,13 @@ def load_data():
     global LOG_FILE
     global IMAGE_BASE_URL
     global CONFIG_BASE_URL
+    global DEFAULT_CFG_FILE
 
     settings = {
         'BIND_PNP_SERVER': '0.0.0.0',
         'CONFIG_BASE_URL': '',
         'DEBUG': False,
+        'DEFAULT_CFG_FILE': 'DEFAULT.cfg',
         'IMAGE_BASE_URL': '',
         'IMAGE_DATA': 'images.toml',
         'LOG_FILE': 'log/pnp_debug.log',
@@ -315,6 +323,7 @@ def load_data():
     IMAGE_DATA = settings.get('IMAGE_DATA')
     IMAGE_BASE_URL = settings.get('IMAGE_BASE_URL').rstrip('/')
     CONFIG_BASE_URL = settings.get('CONFIG_BASE_URL').rstrip('/')
+    DEFAULT_CFG_FILE = settings.get('DEFAULT_CFG_FILE')
 
     try:
         with open(IMAGE_DATA, 'rb') as f:
@@ -408,24 +417,30 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
 
 def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    response = head(f'{CONFIG_BASE_URL}/{device.serial}.cfg')
-    if response.status_code == 200:
-        device.current_job = 'urn:cisco:pnp:device-info'
-        device.pnp_flow = PNPFLOW.CONFIG_START
-        jinja_context = {
-            'udi': udi,
-            'correlator': correlator,
-            'base_url': CONFIG_BASE_URL,
-            'serial_number': device.serial,
-            'delay': 30,  # reload in seconds
-        }
-        _template = render_template('config_upgrade.xml', **jinja_context)
-        if DEBUG:
-            log_info(_template)
-        return _template
-    else:
-        device.error_code = ERROR.ERROR_NO_CFG_FILE
-        device.hard_error = True
+    cfg_file = f'{device.serial}.cfg'
+    response = head(f'{CONFIG_BASE_URL}/{cfg_file}')
+    if response.status_code != 200:  # SERIAL.cfg not found
+        cfg_file = DEFAULT_CFG_FILE
+        response = head(f'{CONFIG_BASE_URL}/{cfg_file}')
+        if response.status_code != 200:  # DEFAULT.cfg also not found
+            device.error_code = ERROR.ERROR_NO_CFG_FILE
+            device.hard_error = True
+            return
+
+    device.current_job = 'urn:cisco:pnp:device-info'
+    device.pnp_flow = PNPFLOW.CONFIG_START
+    jinja_context = {
+        'udi': udi,
+        'correlator': correlator,
+        'base_url': CONFIG_BASE_URL,
+        'serial_number': cfg_file,
+        'delay': 30,  # reload in seconds
+        'cfg_file': cfg_file,
+    }
+    _template = render_template('config_upgrade.xml', **jinja_context)
+    if DEBUG:
+        log_info(_template)
+    return _template
 
 
 def pnp_bye(udi: str, correlator: str) -> str:
