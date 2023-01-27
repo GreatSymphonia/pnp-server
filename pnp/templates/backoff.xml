@@ -3,8 +3,6 @@
     <request xmlns="urn:cisco:pnp:backoff" correlator="{{ correlator }}">
         <backoff>
             <reason>backoffNow</reason>
-<!--            <defaultMinutes>{{ minutes }}</defaultMinutes>-->
-<!--            <terminate/>-->
             <callbackAfter>
                 <seconds>{{ seconds }}</seconds>
                  <minutes>{{ minutes }}</minutes>

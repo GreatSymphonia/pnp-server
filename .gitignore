@@ -12,6 +12,9 @@ pnp/log/
 # python virtual environment
 .venv
 
+# vscode stuff
+.vscode
+
 # pycharm
 .idea
 

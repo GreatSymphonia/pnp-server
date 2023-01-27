@@ -4,6 +4,7 @@
     <meta http-equiv="refresh" content="{{ refresh }}">
     <style>
         body {background-color: rgb(141, 133, 133);}
+        h1 { text-align: center;}
         table { border-spacing: 0; width: 100%}
         tr:nth-child(even) { background-color: #D6EEEE; }
         th {
@@ -26,8 +27,6 @@
             background-color: #7cfc00;
         }
         input { width: 70px; }
-
-
     </style>
 </head>
 <body>
@@ -76,7 +75,7 @@
                 <input type="submit" value="Remove" name="{{ device.udi }}"/>
             </form>
         </td>
-        <td class="{{ device.status}}">{{ device.serial }}</td>
+        <td class="{{ device.status_class }}">{{ device.serial }}</td>
         <td>{{ device.platform }}</td>
         <td>{{ device.hw_rev }}</td>
         <td>{{ device.ip_address }}</td>

@@ -1,0 +1,42 @@
+["cat9k_iosxe.17.06.01.SPA.bin"]
+version = "17.6.1"
+md5 = "fdb9c92bae37f9130d0ee6761afe2919"
+size = 1
+models = ["C9500-24Q", "C9300-24P"]
+
+["asr1000-universalk9.17.05.01a.SPA.bin"]
+version = "17.5.1a"
+md5 = "0e4b1fc1448f8ee289634a41f75dc215"
+size = 1
+models = ["ASR1001-HX"]
+
+["c1000-universalk9-mz.152-7.E7.bin"]
+version = "15.2(7)E7"
+md5 = "1e6f508499c36434f7035b83a4018390"
+size = 16499712
+models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L", "C1000-48P-4G-L", "C1000-48T-4X-L"]
+
+["c1100-universalk9.16.12.01a.SPA.bin"]
+version = "16.12.1a"
+md5 = "045d73625025b4f77c65c7800b7faa2b"
+size = 541469788
+models = []
+
+["c1100-universalk9.17.06.04.SPA.bin"]
+version = "17.6.4"
+md5 = "2caa962f5ed0ecc52f99b90c733c54de"
+size = 706565772
+models = ["C1117-4PMLTEEAWE"]
+
+["c1100-universalk9.17.09.01a.SPA.bin"]
+version = "17.9.1a"
+md5 = "b3efb230d869fa6e77a98b4130c89585"
+size = 684976080
+models = []
+
+["c3560cx-universalk9-mz.152-7.E7.bin"]
+version = "15.2(7)E7"
+md5 = "1c4c0597d355a0926c3d7198c1167cae"
+size = 22967296
+models = ["WS-C3560CX-12PD-S"]
+

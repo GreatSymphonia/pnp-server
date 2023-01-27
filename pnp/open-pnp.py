@@ -19,40 +19,39 @@
 # 20-12-15: renamed ./vars/vars.py to ./vars/settings.py
 #           stop on import error for images.py and platforms.py
 #           removed extending path variable to ./vars
+#           changed open-pnp.ini/images.json to toml (better to handle)
+#
 
-from re import compile as re_compile
-from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
-from pathlib import Path
-from xmltodict import parse as xml_parse
-from time import strftime
-from typing import Optional, List, Dict, Any
+# pip install flask xmltodict requests ifaddr tomli
+# pip install python-dotenv  # for vscode
 import logging
 from logging.handlers import RotatingFileHandler
+from re import compile as re_compile
+from pathlib import Path
+from time import strftime
+from typing import Optional, List, Dict, Any
 from requests import head
-from json import load as json_load
-from json.decoder import JSONDecodeError
-from configparser import ConfigParser
+
+from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
+from xmltodict import parse as xml_parse
+from ifaddr import get_adapters
+from tomli import load as toml_load
+from tomli import TOMLDecodeError
 
 
-try:
-    from netifaces import interfaces, ifaddresses, AF_INET, AF_INET6
-    _netifaces = True
-except ModuleNotFoundError:
-    _netifaces = False
-    pass
-
-# devine global variables
-IMAGE_DATA = None       # 'images.json'
-BIND_PNP_SERVER = None  # '0.0.0.0'
-PORT = None             # 8080
-TIME_FORMAT = None      # '%Y-%m-%dT%H:%M:%S'
-STATUS_REFRESH = None   # 60
-DEBUG = None            # False
-LOG_TO_FILE = None      # True
-LOG_FILE = None         # 'log/pnp_debug.log'
-IMAGE_BASE_URL = None   # ''
-CONFIG_BASE_URL = None  # ''
-IMAGES = None           # {}
+# define global variables
+CFG_FILE = 'open-pnp.toml'
+IMAGE_DATA: Optional[str] = None         # 'images.toml'
+BIND_PNP_SERVER: Optional[str] = None    # '0.0.0.0'
+PORT: Optional[int] = None               # 8080
+TIME_FORMAT: Optional[str] = None        # '%Y-%m-%dT%H:%M:%S'
+STATUS_REFRESH: Optional[int] = None     # 60
+DEBUG: Optional[bool] = None             # False
+LOG_TO_FILE: Optional[bool] = None       # True
+LOG_FILE: Optional[str] = None           # 'log/pnp_debug.log'
+IMAGES: Optional[Dict[str, any]] = None  # {}
+IMAGE_BASE_URL: Optional[str] = None     # ''
+CONFIG_BASE_URL: Optional[str] = None    # ''
 
 
 class SoftwareImage:
@@ -61,6 +60,7 @@ class SoftwareImage:
         self.version: str = version
         self.md5: str = md5
         self.size: int = size
+
 
 class ErrorCodes:
     __readable = {
@@ -160,6 +160,7 @@ class Device:
         self.image: str = ''
         self.destination_name: str = ''
         self.destination_free: Optional[int] = None
+        self.status: str = ''
         self.__pnp_flow: int = PNPFLOW.NEW
         self.pnp_flow_readable: str = PNPFLOW.readable(PNPFLOW.NEW)
         self.target_image: Optional[SoftwareImage] = None
@@ -171,7 +172,7 @@ class Device:
         self.error_count: int = 0
         self.error_message = ''
         self.__hard_error: bool = False
-        self.__status: str = ''
+        self.__status_class: str = ''
 
     @property
     def pnp_flow(self) -> int:
@@ -182,7 +183,7 @@ class Device:
         self.__pnp_flow = pnp_flow
         self.pnp_flow_readable = PNPFLOW.readable(pnp_flow)
         if pnp_flow == PNPFLOW.FINISHED:
-            self.__status = 'finished'
+            self.__status_class = 'finished'
 
     @property
     def refresh_data(self) -> bool:
@@ -204,7 +205,7 @@ class Device:
     def error_code(self, error_code: int):
         self.__error_code = error_code
         self.error_code_readable = ERROR.readable(error_code)
-        self.__status = 'warning'
+        self.__status_class = 'warning'
 
     @property
     def hard_error(self) -> bool:
@@ -213,15 +214,15 @@ class Device:
     @hard_error.setter
     def hard_error(self, hard_error: bool):
         self.__hard_error = hard_error
-        self.__status = 'error'
+        self.__status_class = 'error'
 
     @property
-    def status(self) -> str:
-        return self.__status
+    def status_class(self) -> str:
+        return self.__status_class
 
-    @status.setter
-    def status(self, status: str):
-        self.__status = status
+    @status_class.setter
+    def status_class(self, status_class: str):
+        self.__status_class = status_class
 
 
 app = Flask(__name__, template_folder='./templates')
@@ -281,34 +282,50 @@ def load_data():
     global IMAGE_BASE_URL
     global CONFIG_BASE_URL
 
-    config = ConfigParser()
-    config.read('open-pnp.ini')
-    
-    IMAGE_DATA = config['settings'].get('IMAGE_DATA', 'images.json')
-    BIND_PNP_SERVER = config['settings'].get('BIND_PNP_SERVER', '0.0.0.0') 
-    TIME_FORMAT = config['settings'].get('TIME_FORMAT', '%Y-%m-%dT%H:%M:%S')
-    LOG_FILE = config['settings'].get('LOG_FILE', 'log/pnp_debug.log')
-    IMAGE_BASE_URL = config['settings'].get('IMAGE_BASE_URL', '').rstrip('/')
-    CONFIG_BASE_URL = config['settings'].get('CONFIG_BASE_URL', '').rstrip('/')
-    #
-    PORT = config['settings'].get('PORT', '8080')
-    STATUS_REFRESH = config['settings'].get('STATUS_REFRESH', '60')
-    #
-    PORT = int(PORT) if PORT.isdigit() else 8080
-    STATUS_REFRESH = int(STATUS_REFRESH) if STATUS_REFRESH.isdigit() else 60
-    #
-    DEBUG = True if config['settings'].get('DEBUG', 'False') == 'True' else False
-    LOG_TO_FILE = True if config['settings'].get('LOG_TO_FILE', 'True') == 'True' else False
+    settings = {
+        'BIND_PNP_SERVER': '0.0.0.0',
+        'CONFIG_BASE_URL': '',
+        'DEBUG': False,
+        'IMAGE_BASE_URL': '',
+        'IMAGE_DATA': 'images.toml',
+        'LOG_FILE': 'log/pnp_debug.log',
+        'LOG_TO_FILE': True,
+        'PORT': 8080,
+        'STATUS_REFRESH': 60,
+        'TIME_FORMAT': '%Y-%m-%dT%H:%M:%S'
+    }
 
     try:
-        with open(IMAGE_DATA, 'r') as f:
-            IMAGES = json_load(f)
+        with open(CFG_FILE, 'rb') as f:
+            settings.update(toml_load(f))
+    except FileNotFoundError as e:
+        print(f'ERROR: Data file {CFG_FILE} not found! ({e})')
+        exit(1)
+    except TOMLDecodeError as e:
+        print(f'ERROR: Data file {CFG_FILE} is not valid toml! ({e})')
+        exit(2)
+
+    BIND_PNP_SERVER = settings.get('BIND_PNP_SERVER')
+    PORT = settings.get('PORT')
+    TIME_FORMAT = settings.get('TIME_FORMAT')
+    STATUS_REFRESH = settings.get('STATUS_REFRESH')
+    DEBUG = settings.get('DEBUG')
+    LOG_TO_FILE = settings.get('LOG_TO_FILE')
+    LOG_FILE = settings.get('LOG_FILE')
+    IMAGE_DATA = settings.get('IMAGE_DATA')
+    IMAGE_BASE_URL = settings.get('IMAGE_BASE_URL').rstrip('/')
+    CONFIG_BASE_URL = settings.get('CONFIG_BASE_URL').rstrip('/')
+
+    try:
+        with open(IMAGE_DATA, 'rb') as f:
+            IMAGES = toml_load(f)
     except FileNotFoundError as e:
         print(f'ERROR: Data file {IMAGE_DATA} not found! ({e})')
         exit(1)
-    except JSONDecodeError as e:
-        print(f'ERROR: Data file {IMAGE_DATA} is not valid json! ({e})')
+    except TOMLDecodeError as e:
+        print(f'ERROR: Data file {IMAGE_DATA} is not valid toml! ({e})')
         exit(2)
+
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
     # info_type can be one of:
@@ -350,7 +367,7 @@ def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
 # will not be used as we remove PNP via EEM. PNP terminate is missing a "write mem"
 def pnp_backoff_terminate(udi: str, correlator: str) -> str:
     device = devices[udi]
-    device.status = f'finished'
+    # device.status_class = f'finished'
     device.pnp_flow = PNPFLOW.FINISHED
     device.current_job = 'urn:cisco:pnp:backoff-terminate'
     jinja_context = {
@@ -448,7 +465,7 @@ def create_new_device(udi: str, src_add: str):
                 size=image_data['size']
             )
     if not device.target_image:
-        device.error_code = ERROR.ERROR_NO_IMAGE
+        device.error_code = ERROR.ERROR_NO_PLATFORM
         device.hard_error = True
 
 
@@ -486,17 +503,11 @@ def check_update(udi: str):
 
 def get_local_ip_addresses() -> List[str]:
     _addresses = []
-    for iface_name in interfaces():
-        try:
-            for _address in ifaddresses(iface_name).setdefault(AF_INET):
-                _addresses.append(_address['addr'])
-        except TypeError:
-            pass
-        try:
-            for _address in ifaddresses(iface_name).setdefault(AF_INET6):
-                _addresses.append(_address['addr'])
-        except TypeError:  # if no ip address in interface ifaddresses(iface_name) comes back with None
-            pass
+    adapters = get_adapters()
+    for adapter in adapters:
+        if adapter.nice_name not in ['lo']:
+            for ip in adapter.ips:
+                _addresses.append(ip.ip)
     return _addresses
 
 
@@ -570,15 +581,15 @@ def pnp_work_request():
         device.last_contact = strftime(TIME_FORMAT)
         device.ip_address = src_add
         if device.hard_error:
-            return Response(pnp_backoff(udi, correlator, 59), mimetype='text/xml')
+            return Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
             pass
         if device.backoff:
             if DEBUG:
                 log_info('BACKOFF')
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
             # error_count == 12 -> like hard_error
-            minutes = min((device.error_count * 5), 57) + 2
-            if minutes > 57:
+            minutes = device.error_count + 1
+            if minutes > 10:
                 device.hard_error = True
             return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
@@ -604,7 +615,7 @@ def pnp_work_request():
                 log_info('PNPFLOW.CONFIG_DOWN')
             return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
         if DEBUG:
-            log_info(f'Other PNP_FLOW: {device.pnp_flow}')
+            log_info(f'Other PNP_FLOW: {PNPFLOW.readable(device.pnp_flow)}')
         return Response('', 200)
     else:
         if DEBUG:
@@ -699,13 +710,13 @@ if __name__ == '__main__':
     print(f'Image file(s) base URL  : {IMAGE_BASE_URL}')
     print(f'Config file(s) base URL : {CONFIG_BASE_URL}')
     print()
-    if _netifaces:
-        print('The PnP server is running on the following URL(s)')
-        if BIND_PNP_SERVER in ['0.0.0.0', '::']:
-            addresses = get_local_ip_addresses()
-            for address in addresses:
-                print(f'    http://{address}:{PORT}')
-        else:
-            print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
-        print()
+    print('The PnP server is running on the following URL(s)')
+    if BIND_PNP_SERVER in ['0.0.0.0', '::']:
+        addresses = get_local_ip_addresses()
+        for address in addresses:
+            print(f'    http://{address}:{PORT}')
+    else:
+        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
+    print()
+    print()
     app.run(host=BIND_PNP_SERVER, port=PORT)
