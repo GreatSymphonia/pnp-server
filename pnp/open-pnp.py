@@ -25,7 +25,9 @@
 #             added reload data function
 #             changed open-pnp.ini/images.json to open-pnp.toml/images.toml for better handling
 # 2023-01-27: added default IOS/IOS-XE config file fallback
-#
+# 2023-01-28: moved global variables to Settings class
+#             integrated status_debug.html with status.html
+# 2023-01-29  rework of status page, make table body scrollable
 
 # pip install flask xmltodict requests ifaddr tomli
 # pip install python-dotenv  # for vscode
@@ -45,19 +47,93 @@ from tomli import TOMLDecodeError
 
 
 # define global variables
-CFG_FILE = 'open-pnp.toml'
-IMAGE_DATA: Optional[str] = None         # 'images.toml'
-BIND_PNP_SERVER: Optional[str] = None    # '0.0.0.0'
-PORT: Optional[int] = None               # 8080
-TIME_FORMAT: Optional[str] = None        # '%Y-%m-%dT%H:%M:%S'
-STATUS_REFRESH: Optional[int] = None     # 60
-DEBUG: Optional[bool] = None             # False
-LOG_TO_FILE: Optional[bool] = None       # True
-LOG_FILE: Optional[str] = None           # 'log/pnp_debug.log'
 IMAGES: Optional[Dict[str, any]] = None  # {}
-IMAGE_BASE_URL: Optional[str] = None     # ''
-CONFIG_BASE_URL: Optional[str] = None    # ''
-DEFAULT_CFG_FILE: Optional[str] = None   # 'DEFAULT.cfg'
+
+
+class Settings:
+    def __init__(
+            self,
+            cfg_file: Optional[str] = 'open-pnp.toml',
+            image_data: Optional[str] = 'images.toml',
+            bind_pnp_server: Optional[str] = '0.0.0.0',
+            port: Optional[int] = 8080,
+            time_format: Optional[str] = '%Y-%m-%dT%H:%M:%S',
+            status_refresh: Optional[int] = 60,
+            debug: Optional[bool] = False,
+            log_to_file: Optional[bool] = True,
+            log_file: Optional[str] = 'log/pnp_debug.log',
+            image_base_url: Optional[str] = '',
+            config_base_url: Optional[str] = '',
+            default_cfg_file: Optional[str] = 'DEFAULT.cfg',
+    ):
+        self.__settings = {
+            'CFG_FILE': cfg_file,
+            'IMAGE_DATA': image_data,
+            'BIND_PNP_SERVER': bind_pnp_server,
+            'PORT': port,
+            'TIME_FORMAT': time_format,
+            'STATUS_REFRESH': status_refresh,
+            'DEBUG': debug,
+            'LOG_TO_FILE': log_to_file,
+            'LOG_FILE': log_file,
+            'IMAGE_BASE_URL': image_base_url,
+            'CONFIG_BASE_URL': config_base_url,
+            'DEFAULT_CFG_FILE': default_cfg_file,
+        }
+
+    def update(self, settings: Dict[str, any]):
+        self.__settings.update(settings)
+
+    @property
+    def cfg_file(self) -> str:
+        return self.__settings['CFG_FILE']
+
+    @property
+    def image_data(self) -> str:
+        return self.__settings['IMAGE_DATA']
+
+    @property
+    def bind_pnp_server(self) -> str:
+        return self.__settings['BIND_PNP_SERVER']
+
+    @property
+    def port(self) -> int:
+        return self.__settings['PORT']
+
+    @property
+    def time_format(self) -> str:
+        return self.__settings['TIME_FORMAT']
+
+    @property
+    def status_refresh(self) -> int:
+        return self.__settings['STATUS_REFRESH']
+
+    @property
+    def debug(self) -> bool:
+        return self.__settings['DEBUG']
+
+    @property
+    def log_to_file(self) -> bool:
+        return self.__settings['LOG_TO_FILE']
+
+    @property
+    def log_file(self) -> str:
+        return self.__settings['LOG_FILE']
+
+    @property
+    def image_base_url(self) -> str:
+        return self.__settings['IMAGE_BASE_URL']
+
+    @property
+    def config_base_url(self) -> str:
+        return self.__settings['CONFIG_BASE_URL']
+
+    @property
+    def default_cfg_file(self) -> str:
+        return self.__settings['DEFAULT_CFG_FILE']
+
+
+SETTINGS = Settings()
 
 
 class SoftwareImage:
@@ -232,7 +308,7 @@ class Device:
 
 
 app = Flask(__name__, template_folder='./templates')
-if DEBUG:
+if SETTINGS.debug:
     app.debug = True
 else:
     # disable FLASK console output
@@ -264,75 +340,41 @@ def configure_logger(path):
 
 
 def log_info(message):
-    if LOG_TO_FILE:
-        log = logging.getLogger('root')
-        log.info(message)
+    if SETTINGS.debug:
+        if SETTINGS.log_to_file:
+            log = logging.getLogger('root')
+            log.info(message)
 
 
 def log_critical(message):
-    if LOG_TO_FILE:
-        log = logging.getLogger('root')
-        log.critical(message)
+    if SETTINGS.debug:
+        if SETTINGS.log_to_file:
+            log = logging.getLogger('root')
+            log.critical(message)
 
 
 def load_data():
+    global SETTINGS
     global IMAGES
-    global IMAGE_DATA
-    global BIND_PNP_SERVER
-    global PORT
-    global TIME_FORMAT
-    global STATUS_REFRESH
-    global DEBUG
-    global LOG_TO_FILE
-    global LOG_FILE
-    global IMAGE_BASE_URL
-    global CONFIG_BASE_URL
-    global DEFAULT_CFG_FILE
-
-    settings = {
-        'BIND_PNP_SERVER': '0.0.0.0',
-        'CONFIG_BASE_URL': '',
-        'DEBUG': False,
-        'DEFAULT_CFG_FILE': 'DEFAULT.cfg',
-        'IMAGE_BASE_URL': '',
-        'IMAGE_DATA': 'images.toml',
-        'LOG_FILE': 'log/pnp_debug.log',
-        'LOG_TO_FILE': True,
-        'PORT': 8080,
-        'STATUS_REFRESH': 60,
-        'TIME_FORMAT': '%Y-%m-%dT%H:%M:%S'
-    }
 
     try:
-        with open(CFG_FILE, 'rb') as f:
-            settings.update(toml_load(f))
+        with open(SETTINGS.cfg_file, 'rb') as f:
+            SETTINGS.update(toml_load(f))
     except FileNotFoundError as e:
-        print(f'ERROR: Data file {CFG_FILE} not found! ({e})')
+        print(f'ERROR: Data file {SETTINGS.cfg_file} not found! ({e})')
         exit(1)
     except TOMLDecodeError as e:
-        print(f'ERROR: Data file {CFG_FILE} is not valid toml! ({e})')
+        print(f'ERROR: Data file {SETTINGS.cfg_file} is not valid toml! ({e})')
         exit(2)
 
-    BIND_PNP_SERVER = settings.get('BIND_PNP_SERVER')
-    PORT = settings.get('PORT')
-    TIME_FORMAT = settings.get('TIME_FORMAT')
-    STATUS_REFRESH = settings.get('STATUS_REFRESH')
-    DEBUG = settings.get('DEBUG')
-    LOG_TO_FILE = settings.get('LOG_TO_FILE')
-    LOG_FILE = settings.get('LOG_FILE')
-    IMAGE_DATA = settings.get('IMAGE_DATA')
-    IMAGE_BASE_URL = settings.get('IMAGE_BASE_URL').rstrip('/')
-    CONFIG_BASE_URL = settings.get('CONFIG_BASE_URL').rstrip('/')
-    DEFAULT_CFG_FILE = settings.get('DEFAULT_CFG_FILE')
-
     try:
-        with open(IMAGE_DATA, 'rb') as f:
+        with open(SETTINGS.image_data, 'rb') as f:
             IMAGES = toml_load(f)
     except FileNotFoundError as e:
-        print(f'ERROR: Data file {IMAGE_DATA} not found! ({e})')
+        print(f'ERROR: Data file {SETTINGS.image_data} not found! ({e})')
         exit(1)
     except TOMLDecodeError as e:
-        print(f'ERROR: Data file {IMAGE_DATA} is not valid toml! ({e})')
+        print(f'ERROR: Data file {SETTINGS.image_data} is not valid toml! ({e})')
         exit(2)
 
 
@@ -348,8 +390,7 @@ def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
         'info_type': info_type
     }
     _template = render_template('device_info.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
+    log_info(_template)
     return _template
 
 
@@ -368,8 +409,7 @@ def pnp_backoff(udi: str, correlator: str, minutes: Optional[int] = 1) -> str:
         'hours': hours,
     }
     _template = render_template('backoff.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
+    log_info(_template)
     return _template
 
 
@@ -384,14 +424,13 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
         'correlator': correlator,
     }
     _template = render_template('backoff_terminate.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
+    log_info(_template)
     return _template
 
 
 def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    response = head(f'{IMAGE_BASE_URL}/{device.target_image.image}')
+    response = head(f'{SETTINGS.image_base_url}/{device.target_image.image}')
     if response.status_code == 200:
         device.current_job = 'urn:cisco:pnp:image-install'
         device.pnp_flow = PNPFLOW.UPDATE_START
@@ -400,15 +439,14 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
         jinja_context = {
             'udi': udi,
             'correlator': correlator,
-            'base_url': IMAGE_BASE_URL,
+            'base_url': SETTINGS.image_base_url,
             'image': device.target_image.image,
             'md5': device.target_image.md5.lower(),
             'destination': device.destination_name,
             'delay': 0,  # reload in seconds
         }
         _template = render_template('image_install.xml', **jinja_context)
-        if DEBUG:
-            log_info(_template)
+        log_info(_template)
         return _template
     else:
         device.error_code = ERROR.ERROR_NO_IMAGE_FILE
@@ -418,10 +456,10 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
 def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
     cfg_file = f'{device.serial}.cfg'
-    response = head(f'{CONFIG_BASE_URL}/{cfg_file}')
+    response = head(f'{SETTINGS.config_base_url}/{cfg_file}')
     if response.status_code != 200:  # SERIAL.cfg not found
-        cfg_file = DEFAULT_CFG_FILE
-        response = head(f'{CONFIG_BASE_URL}/{cfg_file}')
+        cfg_file = SETTINGS.default_cfg_file
+        response = head(f'{SETTINGS.config_base_url}/{cfg_file}')
         if response.status_code != 200:  # DEFAULT.cfg also not found
             device.error_code = ERROR.ERROR_NO_CFG_FILE
             device.hard_error = True
@@ -432,14 +470,13 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
-        'base_url': CONFIG_BASE_URL,
+        'base_url': SETTINGS.config_base_url,
         'serial_number': cfg_file,
         'delay': 30,  # reload in seconds
         'cfg_file': cfg_file,
     }
     _template = render_template('config_upgrade.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
+    log_info(_template)
     return _template
 
 
@@ -449,8 +486,7 @@ def pnp_bye(udi: str, correlator: str) -> str:
         'correlator': correlator,
     }
     _template = render_template('bye.xml', **jinja_context)
-    if DEBUG:
-        log_info(_template)
+    log_info(_template)
     return _template
 
 
@@ -461,8 +497,8 @@ def create_new_device(udi: str, src_add: str):
     platform, hw_rev, serial = SERIAL_NUM_RE.findall(udi)[0]
     devices[udi] = Device(
         udi=udi,
-        first_seen=strftime(TIME_FORMAT),
-        last_contact=strftime(TIME_FORMAT),
+        first_seen=strftime(SETTINGS.time_format),
+        last_contact=strftime(SETTINGS.time_format),
         src_address=src_add,
         serial=serial,
         platform=platform,
@@ -493,7 +529,7 @@ def update_device_info(data: Dict[str, Any]):
     device.version = data['pnp']['response']['imageInfo']['versionString']
     device.image = data['pnp']['response']['imageInfo']['imageFile'].split(':')[1]
     device.refresh_data = False
-    device.last_contact = strftime(TIME_FORMAT)
+    device.last_contact = strftime(SETTINGS.time_format)
     for filesystem in data['pnp']['response']['fileSystemList']['fileSystem']:
         if filesystem['@name'] in ['bootflash', 'flash']:
             destination = filesystem
@@ -538,14 +574,12 @@ def status():
         device_list.append(device)
     jinja_context = {
         'devices': device_list,
-        'refresh': STATUS_REFRESH,
-        'config_base_url': CONFIG_BASE_URL,
-        'image_base_url': IMAGE_BASE_URL,
+        'refresh': SETTINGS.status_refresh,
+        'config_base_url': SETTINGS.config_base_url,
+        'image_base_url': SETTINGS.image_base_url,
+        'debug': SETTINGS.debug,
     }
-    if DEBUG:
-        result = render_template('status_debug.html', **jinja_context)
-    else:
-        result = render_template('status.html', **jinja_context)
+    result = render_template('status.html', **jinja_context)
     return Response(result)
 
 
@@ -554,7 +588,7 @@ def buttons():
     udi = list(request.form.keys())[0]
     button = list(request.form.values())[0]
 
-    if button == 'Reload':
+    if button == 'Reload CFG':
         load_data()
 
     if udi in devices.keys():
@@ -587,20 +621,18 @@ def pnp_hello():
 def pnp_work_request():
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     data = xml_parse(request.data)
-    if DEBUG:
-        log_info(f'REQUEST: {data}')
+    log_info(f'REQUEST: {data}')
     correlator = data['pnp']['info']['@correlator']
     udi = data['pnp']['@udi']
     if udi in devices.keys():
         device = devices[udi]
-        device.last_contact = strftime(TIME_FORMAT)
+        device.last_contact = strftime(SETTINGS.time_format)
         device.ip_address = src_add
         if device.hard_error:
             return Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
             pass
         if device.backoff:
-            if DEBUG:
-                log_info('BACKOFF')
+            log_info('BACKOFF')
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
             # error_count == 12 -> like hard_error
             minutes = device.error_count + 1
@@ -608,33 +640,26 @@ def pnp_work_request():
                 device.hard_error = True
             return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
-            if DEBUG:
-                log_info('PNPFLOW.NEW')
+            log_info('PNPFLOW.NEW')
             device.pnp_flow = PNPFLOW.INFO
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
-            if DEBUG:
-                log_info('PNPFLOW.UPDATE_NEEDED')
+            log_info('PNPFLOW.UPDATE_NEEDED')
             device.pnp_flow = PNPFLOW.UPDATE_START
             return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
-            if DEBUG:
-                log_info('PNPFLOW.UPDATE_RELOAD')
+            log_info('PNPFLOW.UPDATE_RELOAD')
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
-            if DEBUG:
-                log_info('PNPFLOW.UPDATE_DOWN')
+            log_info('PNPFLOW.UPDATE_DOWN')
             return Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
-            if DEBUG:
-                log_info('PNPFLOW.CONFIG_DOWN')
+            log_info('PNPFLOW.CONFIG_DOWN')
             return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
-        if DEBUG:
-            log_info(f'Other PNP_FLOW: {PNPFLOW.readable(device.pnp_flow)}')
+        log_info(f'Other PNP_FLOW: {PNPFLOW.readable(device.pnp_flow)}')
         return Response('', 200)
     else:
-        if DEBUG:
-            log_info('REQUEST NEW DEVICE FOUND')
+        log_info('REQUEST NEW DEVICE FOUND')
         create_new_device(udi, src_add)
         # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
         devices[udi].pnp_flow = PNPFLOW.NEW
@@ -645,8 +670,7 @@ def pnp_work_request():
 @app.route('/pnp/WORK-RESPONSE', methods=['POST'])
 def pnp_work_response():
     data = xml_parse(request.data)
-    if DEBUG:
-        log_info(f'RESPONSE: {data}')
+    log_info(f'RESPONSE: {data}')
     src_add = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     udi = data['pnp']['@udi']
     job_type = data['pnp']['response']['@xmlns']
@@ -655,18 +679,17 @@ def pnp_work_response():
 
     device = devices[udi]
     device.ip_address = src_add
-    device.last_contact = strftime(TIME_FORMAT)
+    device.last_contact = strftime(SETTINGS.time_format)
 
     if job_type == 'urn:cisco:pnp:fault':  # error without job info (correlator):-(
         device.error = data['pnp']['response']['fault']['detail']['XSVC-ERR:error']['XSVC-ERR:details']
     else:
         correlator = data['pnp']['response']['@correlator']
         job_status = int(data['pnp']['response']['@success'])
-        if DEBUG:
-            log_info(correlator)
-            log_info(job_type)
-            log_info(device.pnp_flow_readable)
-            log_info(job_status)
+        log_info(f'Correlator: {correlator}')
+        log_info(f'Job type: {job_type}')
+        log_info(f'PnP flow: {device.pnp_flow_readable}')
+        log_info(f'Job status: {job_status}')
         if job_status == 1:  # success
             if job_type not in ['urn:cisco:pnp:backoff']:
                 device.backoff = True
@@ -687,8 +710,7 @@ def pnp_work_response():
                 # device.pnp_flow = PNPFLOW.INFO
                 pass
             _response = pnp_bye(udi, correlator)
-            if DEBUG:
-                log_info(_response)
+            log_info(_response)
             return Response(_response, mimetype='text/xml')
         elif job_status == 0:
             error_code = int(data['pnp']['response']['errorInfo']['errorCode'].split(' ')[-1])
@@ -699,39 +721,38 @@ def pnp_work_response():
                 device.hard_error = True
             return Response(pnp_bye(udi, correlator), mimetype='text/xml')
     device.current_job = 'none'
-    if DEBUG:
-        log_info('Empty Response')
+    log_info('Empty Response')
     return Response('')
 
 
 if __name__ == '__main__':
     load_data()
 
-    if IMAGE_BASE_URL == '':
+    if SETTINGS.image_base_url == '':
         print('IMAGE_BASE_URL not set, check ./vars/vars.py')
         exit(1)
-    if CONFIG_BASE_URL == '':
+    if SETTINGS.config_base_url == '':
         print('CONFIG_BASE_URL not set, check ./vars/vars.py')
         exit(1)
 
-    if DEBUG:
-        configure_logger(LOG_FILE)
+    if SETTINGS.debug:
+        configure_logger(SETTINGS.log_file)
         log_info('STARTED LOGGER')
 
     print()
     print('Running PnP server. Stop with ctrl+c')
-    print(f'Bind to IP-address      : {BIND_PNP_SERVER}')
-    print(f'Listen on port          : {PORT}')
-    print(f'Image file(s) base URL  : {IMAGE_BASE_URL}')
-    print(f'Config file(s) base URL : {CONFIG_BASE_URL}')
+    print(f'Bind to IP-address      : {SETTINGS.bind_pnp_server}')
+    print(f'Listen on port          : {SETTINGS.port}')
+    print(f'Image file(s) base URL  : {SETTINGS.image_base_url}')
+    print(f'Config file(s) base URL : {SETTINGS.config_base_url}')
     print()
     print('The PnP server is running on the following URL(s)')
-    if BIND_PNP_SERVER in ['0.0.0.0', '::']:
+    if SETTINGS.bind_pnp_server in ['0.0.0.0', '::']:
         addresses = get_local_ip_addresses()
         for address in addresses:
-            print(f'    http://{address}:{PORT}')
+            print(f'    http://{address}:{SETTINGS.port}')
     else:
-        print(f'Status page running on : http://{BIND_PNP_SERVER}:{PORT}')
+        print(f'Status page running on : http://{SETTINGS.bind_pnp_server}:{SETTINGS.port}')
     print()
     print()
-    app.run(host=BIND_PNP_SERVER, port=PORT)
+    app.run(host=SETTINGS.bind_pnp_server, port=SETTINGS.port)

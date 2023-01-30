@@ -20,25 +20,13 @@ models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L",
 version = "16.12.1a"
 md5 = "045d73625025b4f77c65c7800b7faa2b"
 size = 541469788
-models = []
+models = ["C1117-4PMLTEEAWE"]
 
 ["c1100-universalk9.17.06.04.SPA.bin"]
 version = "17.6.4"
 md5 = "2caa962f5ed0ecc52f99b90c733c54de"
 size = 706565772
 models = []
-
-["c1100-universalk9.17.09.01a.SPA.bin"]
-version = "17.9.1a"
-md5 = "b3efb230d869fa6e77a98b4130c89585"
-size = 684976080
-models = []
-
-["c1100-universalk9.17.09.02a.SPA.bin"]
-version = "17.9.2a"
-md5 = "5a1e3c44a40d63d6d8d83370fe37d21d"
-size = 685295244
-models = ["C1117-4PMLTEEAWE"]
 
 ["c1100-universalk9.17.10.01a.SPA.bin"]
 version = "17.10.1a"
