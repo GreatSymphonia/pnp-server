@@ -56,7 +56,7 @@ on Linux
 (.venv) :~/cisco_day0_provision/pnp$pip3 install flask xmltodict requests ifaddr tomli
 
 # run the pnp server
-(.venv) :~/cisco_day0_provision/pnp$ python3 open-pnp.py 
+(.venv) :~/cisco_day0_provision/pnp$ ./open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
 
 Running PnP server. Stop with ctrl+c
 Bind to IP-address      : 0.0.0.0
@@ -78,7 +78,7 @@ c:\cisco_day0_provision\pnp>.venv\Scripts\activate.bat
 
 (.venv)c:\cisco_day0_provision\pnp>pip install flask xmltodict requests ifaddr tomli
 
-(.venv)c:\cisco_day0_provision\pnp>python open-pnp.py
+(.venv)c:\cisco_day0_provision\pnp>python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
 
 Running PnP server. Stop with ctrl+c
 Bind to IP-address      : ::

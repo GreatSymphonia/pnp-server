@@ -3,11 +3,11 @@
 # bind_pnp_server = "::"
 # port = 8080
 # time_format = "%y-%m-%dt%h:%m:%s"
-status_refresh = 10
+# status_refresh = 10
 # debug = false
 # log_to_file = true
 # log_file = "log/pnp_debug.log"
 # default_cfg_file = "default.cfg"
 # image_data = "images.toml"
-image_url = "http://192.168.10.133:8080/images"
-config_url = "http://192.168.10.133:8080/configs"
+# image_url = "http://192.168.10.133:8080/images"
+# config_url = "http://192.168.10.133:8080/configs"
