@@ -66,8 +66,11 @@
             h1 {
                 text-align: center;
             }
-            input {
+            input.reload_cfg {
                 width: 100px;
+            }
+            input.action {
+                width: 70px;
             }
             div.header {
                 width: 100%;
@@ -163,11 +166,11 @@
                         <td>
                             <!--
                             <form method="post" action="/buttons">
-                                <input type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>
+                                <input class="action" type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>
                             </form>
                             -->
                             <form method="post" action="/buttons">
-                                <input type="submit" value="Remove" name="{{ device.udi }}"/>
+                                <input class="action" type="submit" value="Remove" name="{{ device.udi }}"/>
                             </form>
                         </td>
                         {% if debug %}
@@ -215,7 +218,7 @@
             </footer>
             <div class="reload_cfg">
                 <form class="reload_cfg" method="post" action="/buttons">
-                    <input type="submit" value="Reload CFG" name="reload_data"/>
+                    <input class="reload_cfg" type="submit" value="Reload CFG" name="reload_data"/>
                 </form>
             </div>
         </div>

@@ -26,13 +26,13 @@ models = []
 version = "17.6.4"
 md5 = "2caa962f5ed0ecc52f99b90c733c54de"
 size = 706565772
-models = []
+models = ["C1117-4PMLTEEAWE"]
 
 ["c1100-universalk9.17.10.01a.SPA.bin"]
 version = "17.10.1a"
 md5 = "a0cd6218c42f19bed425e3c63a11bcda"
 size = 689542648
-models = ["C1117-4PMLTEEAWE"]
+models = []
 
 ["c3560cx-universalk9-mz.152-7.E7.bin"]
 version = "15.2(7)E7"

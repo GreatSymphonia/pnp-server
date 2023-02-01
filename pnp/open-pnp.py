@@ -29,20 +29,25 @@
 #             integrated status_debug.html with status.html
 # 2023-01-29: rework of status page, make table body scrollable
 # 2023-02-01: added cli options, changed debug/log output
+#             cleanup: removed global variables
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
 
+# system libs
 import logging
 from logging.handlers import RotatingFileHandler
 from re import compile as re_compile
-from pathlib import Path
 from time import strftime
 from typing import Optional, List, Dict, Any
 from requests import head
 from sys import stdout
-import argparse
+from argparse import (
+    Namespace as arg_Namespace,
+    ArgumentParser,
+)
 
+# additional libs
 from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
 from xmltodict import parse as xml_parse
 from ifaddr import get_adapters
@@ -50,13 +55,10 @@ from tomli import load as toml_load
 from tomli import TOMLDecodeError
 
 
-# define global variables
-IMAGES: Optional[Dict[str, any]] = None  # {}
-
-
 class Settings:
     def __init__(
             self,
+            cli_args: Dict[str, any],
             cfg_file: Optional[str] = 'open-pnp.toml',
             image_data: Optional[str] = 'images.toml',
             bind_pnp_server: Optional[str] = '0.0.0.0',
@@ -85,13 +87,23 @@ class Settings:
             'default_cfg_file': default_cfg_file,
         }
         self.__args = {}
+        self.__set_cli_args(cli_args)
 
-    def set_cli_args(self, cli_args: Dict[str, any]):
+    def __set_cli_args(self, cli_args: Dict[str, any]):
         self.__args = ({k: v for k, v in cli_args.items() if v})
         self.__settings.update(self.__args)
 
-    def update(self, settings: Dict[str, any]):
-        self.__settings.update(settings)
+    def update(self, cfg_file: str):
+        try:
+            with open(cfg_file, 'rb') as f:
+                self.__settings.update(toml_load(f))
+        except FileNotFoundError as e:
+            print(f'ERROR: Data file {cfg_file} not found! ({e})')
+            exit(1)
+        except TOMLDecodeError as e:
+            print(f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
+            exit(2)
+
         self.__settings.update(self.__args)
 
     @property
@@ -143,9 +155,6 @@ class Settings:
         return self.__settings['default_cfg_file']
 
 
-SETTINGS = Settings()
-
-
 class SoftwareImage:
     def __init__(self, image: str, version: str, md5: str, size: int,):
         self.image: str = image
@@ -191,9 +200,6 @@ class ErrorCodes:
         return self.__readable.get(error_code, f'unknown: {error_code}')
 
 
-ERROR = ErrorCodes()
-
-
 class PnpFlow:
     __readable = {
         0: 'None',
@@ -230,9 +236,6 @@ class PnpFlow:
 
     def readable(self, state: int):
         return self.__readable.get(state, 'unknown')
-
-
-PNPFLOW = PnpFlow()
 
 
 class Device:
@@ -317,17 +320,25 @@ class Device:
         self.__status_class = status_class
 
 
-app = Flask(__name__, template_folder='./templates')
-if SETTINGS.debug:
-    app.debug = True
-else:
-    # disable FLASK console output
-    logging.getLogger("werkzeug").disabled = True
-    cli.show_server_banner = lambda *args: None
+class Images:
+    def __init__(self, images_file):
+        self.__images = {}
+        self.load_image_data(images_file)
 
+    def load_image_data(self, images_file):
+        try:
+            with open(images_file, 'rb') as f:
+                self.__images = toml_load(f)
+        except FileNotFoundError as e:
+            print(f'ERROR: Data file {images_file} not found! ({e})')
+            exit(1)
+        except TOMLDecodeError as e:
+            print(f'ERROR: Data file {images_file} is not in valid toml format! ({e})')
+            exit(2)
 
-current_dir = Path(__file__)
-devices: Dict[str, Device] = {}
+    @property
+    def images(self) -> Dict[str, any]:
+        return self.__images
 
 
 def configure_logger(path):
@@ -369,33 +380,8 @@ def log_critical(message):
         log.critical(message)
 
 
-def load_data():
-    global SETTINGS
-    global IMAGES
-
-    try:
-        with open(SETTINGS.cfg_file, 'rb') as f:
-            SETTINGS.update(toml_load(f))
-    except FileNotFoundError as e:
-        print(f'ERROR: Data file {SETTINGS.cfg_file} not found! ({e})')
-        exit(1)
-    except TOMLDecodeError as e:
-        print(f'ERROR: Data file {SETTINGS.cfg_file} is not valid toml! ({e})')
-        exit(2)
-
-    try:
-        with open(SETTINGS.image_data, 'rb') as f:
-            IMAGES = toml_load(f)
-    except FileNotFoundError as e:
-        print(f'ERROR: Data file {SETTINGS.image_data} not found! ({e})')
-        exit(1)
-    except TOMLDecodeError as e:
-        print(f'ERROR: Data file {SETTINGS.image_data} is not valid toml! ({e})')
-        exit(2)
-
-
-def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+def parse_arguments() -> arg_Namespace:
+    parser = ArgumentParser(
         prog='open-pnp.py',
         description='This is a basic implementation of the Cisco PnP protocol. It is intended to roll out image updates'
                     ' and configurations for Cisco IOS/IOS-XE devices on day0.',
@@ -540,11 +526,9 @@ def pnp_bye(udi: str, correlator: str) -> str:
     return _template
 
 
-SERIAL_NUM_RE = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
-
-
 def create_new_device(udi: str, src_add: str):
-    platform, hw_rev, serial = SERIAL_NUM_RE.findall(udi)[0]
+    serial_num_re = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
+    platform, hw_rev, serial = serial_num_re.findall(udi)[0]
     devices[udi] = Device(
         udi=udi,
         first_seen=strftime(SETTINGS.time_format),
@@ -557,7 +541,7 @@ def create_new_device(udi: str, src_add: str):
     )
     device = devices[udi]
     device.backoff = True
-    for image, image_data in IMAGES.items():
+    for image, image_data in IMAGES.images.items():
         if platform in image_data['models']:
             device.target_image = SoftwareImage(
                 image=image,
@@ -612,6 +596,10 @@ def get_local_ip_addresses() -> List[str]:
     return _addresses
 
 
+# flask
+app = Flask(__name__, template_folder='./templates')
+
+
 @app.route('/')
 def root():
     return redirect('/status', 302)
@@ -639,7 +627,8 @@ def buttons():
     button = list(request.form.values())[0]
 
     if button == 'Reload CFG':
-        load_data()
+        IMAGES.load_image_data(SETTINGS.image_data)
+        SETTINGS.update(SETTINGS.cfg_file)
 
     if udi in devices.keys():
         device = devices[udi]
@@ -777,8 +766,20 @@ def pnp_work_response():
 
 if __name__ == '__main__':
 
-    SETTINGS.set_cli_args(vars(parse_arguments()))
-    load_data()
+    ERROR = ErrorCodes()
+    PNPFLOW = PnpFlow()
+    SETTINGS = Settings(vars(parse_arguments()))
+    SETTINGS.update(SETTINGS.cfg_file)
+    IMAGES = Images(SETTINGS.image_data)
+
+    devices: Dict[str, Device] = {}
+
+    if SETTINGS.debug:
+        app.debug = True
+    else:
+        # disable FLASK console output
+        logging.getLogger("werkzeug").disabled = True
+        cli.show_server_banner = lambda *args: None
 
     if SETTINGS.image_url == '':
         print(f'image_url not set, check {SETTINGS.cfg_file}')
