@@ -102,7 +102,7 @@ You can check if the PnP server is running by opening a web browser and accessin
 
 to use the PnP server you need to configure the server by modifying the following files
 
-- [**_settings.toml_**](/pnp/open-pnp.toml)
+- [**_open-pnp.toml_**](/pnp/open-pnp.toml)
 - [**_images.toml_**](/pnp/images.toml)
 
 **NOTE:** after changing the PnP server configuration you need to restart the PnP server.
@@ -113,28 +113,28 @@ to use the PnP server you need to configure the server by modifying the followin
 #### Global settings [**open-pnp.toml**](/pnp/open-pnp.toml)
 
 ```
-# BIND_PNP_SERVER = "0.0.0.0"
-# PORT = 8080
-# TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
-# STATUS_REFRESH = 60
-# DEBUG = false
-# LOG_TO_FILE = true
-# LOG_FILE = "log/pnp_debug.log"
-# IMAGE_DATA = "images.toml"
-IMAGE_BASE_URL = "http://192.168.10.133:8080/images"
-CONFIG_BASE_URL = "http://192.168.10.133:8080/configs"
+# bind_pnp_server = "0.0.0.0"
+# port = 8080
+# time_format = "%Y-%m-%dT%H:%M:%S"
+# status_refresh = 60
+# debug = false
+# log_to_console = false
+# log_file = "log/pnp_debug.log"
+# image_data = "images.toml"
+# image_base_url = "http://192.168.10.133:8080/images"
+# config_base_url = "http://192.168.10.133:8080/configs"
 ```
 
-- **BIND_PNP_SERVER**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
-- **PORT**: the TCP port the server should listen on (remember for port 80 the server needs to run as root)
-- **TIME_FORMAT**: the time format used in the status page
-- **STATUS_REFRESH**: the interval in seconds the status page will automatically reload
-- **DEBUG**: enable debug output with `DEBUG = true`. Can be `true` or `false`.
-- **LOG_FILE**: path/name of the log file
-- **LOG_TO_FILE**: write log output to file. Can be `true` or `false`.
-- **IMAGE_DATA**: the file containing the data of your IOS/IOS-XE images
-- **IMAGE_BASE_URL**: the base URL for your images 
-- **CONFIG_BASE_URL**: the base URL for your configuration files
+- **bind_pnp_server**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
+- **port**: the TCP port the server should listen on (remember for port 80 the server needs to run as root)
+- **time_format**: the time format used in the status page
+- **status_refresh**: the interval in seconds the status page will automatically reload
+- **debug**: enable debug output with `debug = true`. Can be `true` or `false`.
+- **log_file**: path/name of the log file
+- **log_to_console**: send debug output to stdout. Can be `true` or `false`.
+- **image_data**: the file containing the data of your IOS/IOS-XE images
+- **image_base_url**: the base URL for your images 
+- **config_base_url**: the base URL for your configuration files
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
@@ -157,7 +157,58 @@ models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L",
 
 ```
 
-**NOTE:** By default _open-pnp_ expects the image data in _images.json_. You can change this with the key _IMAGE_DATA_ in _settings.ini_.
+**NOTE:** By default _open-pnp_ expects the image data in _images.toml_. You can change this with the key _image_data_ in _open-pnp.toml_.
+
+---
+### Command Line Options
+
+With the Command Line Options you can override the default values, and the values from the _open-pnp.toml_ config file.
+With the option --config_file CONFIG_FILE you can specify a costume config file to use instead of _open.pnp.toml_.   
+
+```
+$ ./open-pnp.py -h
+usage: open-pnp.py [-h] [--bind_pnp_server BIND_PNP_SERVER] [--port PORT]
+                   [--time_format TIME_FORMAT]
+                   [--status_refresh STATUS_REFRESH] [--debug]
+                   [--log_to_console] [--log_file LOG_FILE]
+                   [--image_data IMAGE_DATA] [--image_url IMAGE_URL]
+                   [--config_url CONFIG_URL] [--config_file CONFIG_FILE]
+
+This is a basic implementation of the Cisco PnP protocol. It is intended to
+roll out image updates and configurations for Cisco IOS/IOS-XE devices on
+day0.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --bind_pnp_server BIND_PNP_SERVER, -b BIND_PNP_SERVER
+                        Bind PnP server to IP-address. (default: 0.0.0.0)
+  --port PORT, -p PORT  TCP port to listen on. (default: 8080)
+  --time_format TIME_FORMAT
+                        Format string to render time. (default:
+                        %Y-%m-%dT%H:%M:%S)
+  --status_refresh STATUS_REFRESH, -r STATUS_REFRESH
+                        Time in seconds to refresh PnP server status page.
+                        (default: 60)
+  --debug               Enable Debug output send to "log_file".
+  --log_to_console      Enable debug output send to stdout (requires --debug).
+  --log_file LOG_FILE   Path/name of the logfile. (default: log/pnp_debug.log,
+                        requires --debug)
+  --image_data IMAGE_DATA
+                        File containing the image description. (default:
+                        images.toml)
+  --image_url IMAGE_URL
+                        Download URL for image files. I.e.
+                        http://192.168.10.133:8080/images
+  --config_url CONFIG_URL
+                        Download URL for config files. I.e.
+                        http://192.168.10.133:8080/configs
+  --config_file CONFIG_FILE
+                        Path/name of open PnP server config file. (default:
+                        open-pnp.toml)
+
+Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org
+
+```
 
 ---
 ### PnP server discovery

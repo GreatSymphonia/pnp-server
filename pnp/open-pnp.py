@@ -27,10 +27,12 @@
 # 2023-01-27: added default IOS/IOS-XE config file fallback
 # 2023-01-28: moved global variables to Settings class
 #             integrated status_debug.html with status.html
-# 2023-01-29  rework of status page, make table body scrollable
-
+# 2023-01-29: rework of status page, make table body scrollable
+# 2023-02-01: added cli options, changed debug/log output
+#
 # pip install flask xmltodict requests ifaddr tomli
-# pip install python-dotenv  # for vscode
+#
+
 import logging
 from logging.handlers import RotatingFileHandler
 from re import compile as re_compile
@@ -38,6 +40,8 @@ from pathlib import Path
 from time import strftime
 from typing import Optional, List, Dict, Any
 from requests import head
+from sys import stdout
+import argparse
 
 from flask import Flask, request, send_from_directory, render_template, Response, redirect, cli
 from xmltodict import parse as xml_parse
@@ -60,77 +64,83 @@ class Settings:
             time_format: Optional[str] = '%Y-%m-%dT%H:%M:%S',
             status_refresh: Optional[int] = 60,
             debug: Optional[bool] = False,
-            log_to_file: Optional[bool] = True,
+            log_to_console: Optional[bool] = False,
             log_file: Optional[str] = 'log/pnp_debug.log',
-            image_base_url: Optional[str] = '',
-            config_base_url: Optional[str] = '',
+            image_url: Optional[str] = '',
+            config_url: Optional[str] = '',
             default_cfg_file: Optional[str] = 'DEFAULT.cfg',
     ):
         self.__settings = {
-            'CFG_FILE': cfg_file,
-            'IMAGE_DATA': image_data,
-            'BIND_PNP_SERVER': bind_pnp_server,
-            'PORT': port,
-            'TIME_FORMAT': time_format,
-            'STATUS_REFRESH': status_refresh,
-            'DEBUG': debug,
-            'LOG_TO_FILE': log_to_file,
-            'LOG_FILE': log_file,
-            'IMAGE_BASE_URL': image_base_url,
-            'CONFIG_BASE_URL': config_base_url,
-            'DEFAULT_CFG_FILE': default_cfg_file,
+            'cfg_file': cfg_file,
+            'image_data': image_data,
+            'bind_pnp_server': bind_pnp_server,
+            'port': port,
+            'time_format': time_format,
+            'status_refresh': status_refresh,
+            'debug': debug,
+            'log_to_console': log_to_console,
+            'log_file': log_file,
+            'image_url': image_url,
+            'config_url': config_url,
+            'default_cfg_file': default_cfg_file,
         }
+        self.__args = {}
+
+    def set_cli_args(self, cli_args: Dict[str, any]):
+        self.__args = ({k: v for k, v in cli_args.items() if v})
+        self.__settings.update(self.__args)
 
     def update(self, settings: Dict[str, any]):
         self.__settings.update(settings)
+        self.__settings.update(self.__args)
 
     @property
     def cfg_file(self) -> str:
-        return self.__settings['CFG_FILE']
+        return self.__settings['cfg_file']
 
     @property
     def image_data(self) -> str:
-        return self.__settings['IMAGE_DATA']
+        return self.__settings['image_data']
 
     @property
     def bind_pnp_server(self) -> str:
-        return self.__settings['BIND_PNP_SERVER']
+        return self.__settings['bind_pnp_server']
 
     @property
     def port(self) -> int:
-        return self.__settings['PORT']
+        return self.__settings['port']
 
     @property
     def time_format(self) -> str:
-        return self.__settings['TIME_FORMAT']
+        return self.__settings['time_format']
 
     @property
     def status_refresh(self) -> int:
-        return self.__settings['STATUS_REFRESH']
+        return self.__settings['status_refresh']
 
     @property
     def debug(self) -> bool:
-        return self.__settings['DEBUG']
+        return self.__settings['debug']
 
     @property
-    def log_to_file(self) -> bool:
-        return self.__settings['LOG_TO_FILE']
+    def log_to_console(self) -> bool:
+        return self.__settings['log_to_console']
 
     @property
     def log_file(self) -> str:
-        return self.__settings['LOG_FILE']
+        return self.__settings['log_file']
 
     @property
-    def image_base_url(self) -> str:
-        return self.__settings['IMAGE_BASE_URL']
+    def image_url(self) -> str:
+        return self.__settings['image_url']
 
     @property
-    def config_base_url(self) -> str:
-        return self.__settings['CONFIG_BASE_URL']
+    def config_url(self) -> str:
+        return self.__settings['config_url']
 
     @property
     def default_cfg_file(self) -> str:
-        return self.__settings['DEFAULT_CFG_FILE']
+        return self.__settings['default_cfg_file']
 
 
 SETTINGS = Settings()
@@ -322,9 +332,12 @@ devices: Dict[str, Device] = {}
 
 def configure_logger(path):
     log_formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(name)s :: %(module)s ::%(message)s')
+    log = logging.getLogger('root')
+    log.setLevel(logging.INFO)
+
     log_file = path
     # create a new file > 5 mb size
-    log_handler = RotatingFileHandler(
+    log_handler_file = RotatingFileHandler(
         log_file,
         mode='a',
         maxBytes=5 * 1024 * 1024,
@@ -332,25 +345,28 @@ def configure_logger(path):
         # encoding=None,
         # delay=0
     )
-    log_handler.setFormatter(log_formatter)
-    log_handler.setLevel(logging.INFO)
-    log = logging.getLogger('root')
-    log.setLevel(logging.INFO)
-    log.addHandler(log_handler)
+
+    log_handler_file.setFormatter(log_formatter)
+    log_handler_file.setLevel(logging.INFO)
+    log.addHandler(log_handler_file)
+
+    if SETTINGS.log_to_console:
+        log_handler_console = logging.StreamHandler(stdout)
+        log_handler_console.setFormatter(log_formatter)
+        log_handler_console.setLevel(logging.INFO)
+        log.addHandler(log_handler_console)
 
 
 def log_info(message):
     if SETTINGS.debug:
-        if SETTINGS.log_to_file:
-            log = logging.getLogger('root')
-            log.info(message)
+        log = logging.getLogger('root')
+        log.info(message)
 
 
 def log_critical(message):
     if SETTINGS.debug:
-        if SETTINGS.log_to_file:
-            log = logging.getLogger('root')
-            log.critical(message)
+        log = logging.getLogger('root')
+        log.critical(message)
 
 
 def load_data():
@@ -376,6 +392,40 @@ def load_data():
     except TOMLDecodeError as e:
         print(f'ERROR: Data file {SETTINGS.image_data} is not valid toml! ({e})')
         exit(2)
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog='open-pnp.py',
+        description='This is a basic implementation of the Cisco PnP protocol. It is intended to roll out image updates'
+                    ' and configurations for Cisco IOS/IOS-XE devices on day0.',
+        # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog='Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+    )
+    parser.add_argument('--bind_pnp_server', '-b', type=str,
+                        help='Bind PnP server to IP-address. (default: 0.0.0.0)')
+    parser.add_argument('--port', '-p', type=int,
+                        help='TCP port to listen on. (default: 8080)')
+    parser.add_argument('--time_format', type=str,
+                        help='Format string to render time. (default: %%Y-%%m-%%dT%%H:%%M:%%S)')
+    parser.add_argument('--status_refresh', '-r', type=int,
+                        help='Time in seconds to refresh PnP server status page. (default: 60)')
+    parser.add_argument('--debug', default=False, action="store_const", const=True,
+                        help='Enable Debug output send to "log_file".')
+    parser.add_argument('--log_to_console', default=False, action="store_const", const=True,
+                        help='Enable debug output send to stdout (requires --debug).')
+    parser.add_argument('--log_file', type=str,
+                        help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
+    parser.add_argument('--image_data', type=str,
+                        help='File containing the image description. (default: images.toml)')
+    parser.add_argument('--image_url', type=str,
+                        help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
+    parser.add_argument('--config_url', type=str,
+                        help='Download URL for config files. I.e. http://192.168.10.133:8080/configs')
+    parser.add_argument('--config_file', type=str,
+                        help='Path/name of open PnP server config file. (default: open-pnp.toml)')
+
+    return parser.parse_args()
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -430,7 +480,7 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
 
 def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    response = head(f'{SETTINGS.image_base_url}/{device.target_image.image}')
+    response = head(f'{SETTINGS.image_url}/{device.target_image.image}')
     if response.status_code == 200:
         device.current_job = 'urn:cisco:pnp:image-install'
         device.pnp_flow = PNPFLOW.UPDATE_START
@@ -439,7 +489,7 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
         jinja_context = {
             'udi': udi,
             'correlator': correlator,
-            'base_url': SETTINGS.image_base_url,
+            'base_url': SETTINGS.image_url,
             'image': device.target_image.image,
             'md5': device.target_image.md5.lower(),
             'destination': device.destination_name,
@@ -456,10 +506,10 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
 def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
     cfg_file = f'{device.serial}.cfg'
-    response = head(f'{SETTINGS.config_base_url}/{cfg_file}')
+    response = head(f'{SETTINGS.config_url}/{cfg_file}')
     if response.status_code != 200:  # SERIAL.cfg not found
         cfg_file = SETTINGS.default_cfg_file
-        response = head(f'{SETTINGS.config_base_url}/{cfg_file}')
+        response = head(f'{SETTINGS.config_url}/{cfg_file}')
         if response.status_code != 200:  # DEFAULT.cfg also not found
             device.error_code = ERROR.ERROR_NO_CFG_FILE
             device.hard_error = True
@@ -470,7 +520,7 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     jinja_context = {
         'udi': udi,
         'correlator': correlator,
-        'base_url': SETTINGS.config_base_url,
+        'base_url': SETTINGS.config_url,
         'serial_number': cfg_file,
         'delay': 30,  # reload in seconds
         'cfg_file': cfg_file,
@@ -575,8 +625,8 @@ def status():
     jinja_context = {
         'devices': device_list,
         'refresh': SETTINGS.status_refresh,
-        'config_base_url': SETTINGS.config_base_url,
-        'image_base_url': SETTINGS.image_base_url,
+        'config_url': SETTINGS.config_url,
+        'image_url': SETTINGS.image_url,
         'debug': SETTINGS.debug,
     }
     result = render_template('status.html', **jinja_context)
@@ -726,13 +776,15 @@ def pnp_work_response():
 
 
 if __name__ == '__main__':
+
+    SETTINGS.set_cli_args(vars(parse_arguments()))
     load_data()
 
-    if SETTINGS.image_base_url == '':
-        print('IMAGE_BASE_URL not set, check ./vars/vars.py')
+    if SETTINGS.image_url == '':
+        print(f'image_url not set, check {SETTINGS.cfg_file}')
         exit(1)
-    if SETTINGS.config_base_url == '':
-        print('CONFIG_BASE_URL not set, check ./vars/vars.py')
+    if SETTINGS.config_url == '':
+        print(f'config_url not set, check {SETTINGS.cfg_file}')
         exit(1)
 
     if SETTINGS.debug:
@@ -740,11 +792,12 @@ if __name__ == '__main__':
         log_info('STARTED LOGGER')
 
     print()
-    print('Running PnP server. Stop with ctrl+c')
+    print(f'Running open PnP server. Stop with ctrl+c')
+    print()
     print(f'Bind to IP-address      : {SETTINGS.bind_pnp_server}')
     print(f'Listen on port          : {SETTINGS.port}')
-    print(f'Image file(s) base URL  : {SETTINGS.image_base_url}')
-    print(f'Config file(s) base URL : {SETTINGS.config_base_url}')
+    print(f'Image file(s) base URL  : {SETTINGS.image_url}')
+    print(f'Config file(s) base URL : {SETTINGS.config_url}')
     print()
     print('The PnP server is running on the following URL(s)')
     if SETTINGS.bind_pnp_server in ['0.0.0.0', '::']:
@@ -754,5 +807,6 @@ if __name__ == '__main__':
     else:
         print(f'Status page running on : http://{SETTINGS.bind_pnp_server}:{SETTINGS.port}')
     print()
+    print(f'Writen by thl-cmk, see https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision')
     print()
     app.run(host=SETTINGS.bind_pnp_server, port=SETTINGS.port)

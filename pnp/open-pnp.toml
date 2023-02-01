@@ -1,13 +1,13 @@
 # [settings]
-# BIND_PNP_SERVER = "0.0.0.0"
-# BIND_PNP_SERVER = "::"
-# PORT = 8080
-# TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
-STATUS_REFRESH = 10
-# DEBUG = false
-# LOG_TO_FILE = true
-# LOG_FILE = "log/pnp_debug.log"
-# DEFAULT_CFG_FILE = "DEFAULT.cfg"
-# IMAGE_DATA = "images.json"
-IMAGE_BASE_URL = "http://192.168.10.133:8080/images"
-CONFIG_BASE_URL = "http://192.168.10.133:8080/configs"
+# bind_pnp_server = "0.0.0.0"
+# bind_pnp_server = "::"
+# port = 8080
+# time_format = "%y-%m-%dt%h:%m:%s"
+status_refresh = 10
+# debug = false
+# log_to_file = true
+# log_file = "log/pnp_debug.log"
+# default_cfg_file = "default.cfg"
+# image_data = "images.toml"
+image_url = "http://192.168.10.133:8080/images"
+config_url = "http://192.168.10.133:8080/configs"

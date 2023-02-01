@@ -11,5 +11,5 @@
 2023-01-27: added default IOS/IOS-XE config file fallback
 2023-01-28: moved global variables to Settings class
             integrated status_debug.html with status.html
-2023-01-29  rework of status page, make table body scrollable
-
+2023-01-29: rework of status page, make table body scrollable
+2023-02-01: added cli options, changed debug/log output
