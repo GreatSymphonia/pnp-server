@@ -40,3 +40,14 @@ md5 = "1c4c0597d355a0926c3d7198c1167cae"
 size = 22967296
 models = ["WS-C3560CX-12PD-S"]
 
+["ir1101-universalk9.17.06.01.SPA.bin"]
+version = "17.6.1"
+md5 = "2654cd5734a0722cfd3f521c25071552"
+size = 638837341
+models = []
+
+["ir1101-universalk9.17.06.01a.SPA.bin"]
+version = "17.6.1a"
+md5 = "492f47e99136de9e0982c755ac1e1972"
+size = 634708372
+models = ["IR1101-K9"]
