@@ -91,6 +91,13 @@ The PnP server is running on the following URL(s)
 
 ```
 
+**Note:** in PowerShell activate the Python environment  with:
+
+```
+PS C:\cisco_day0_provision\pnp> Set-ExecutionPolicy Bypass CurrentUser
+PS C:\cisco_day0_provision\pnp> .\.venv\Scripts\Activate.ps1
+```
+
 You can check if the PnP server is running by opening a web browser and accessing the status page of the pnp server
 
 `http://<your-ip>:8080/status`
