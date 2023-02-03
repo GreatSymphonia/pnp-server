@@ -590,9 +590,17 @@ def get_local_ip_addresses() -> List[str]:
     _addresses = []
     adapters = get_adapters()
     for adapter in adapters:
-        if adapter.nice_name not in ['lo']:
-            for ip in adapter.ips:
-                _addresses.append(ip.ip)
+        for ip in adapter.ips:
+            drop_ip = False
+            if ip.is_IPv4:
+                ip_addr= ip.ip
+            elif ip.is_IPv6:
+                ip_addr = ip.ip[0]
+            for entry in ['127.', 'fe80::', '::1']:
+                if str(ip_addr).lower().startswith(entry):
+                    drop_ip = True
+            if not drop_ip:
+                _addresses.append(ip_addr)
     return _addresses
 
 
