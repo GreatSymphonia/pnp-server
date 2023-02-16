@@ -45,6 +45,7 @@ from sys import stdout
 from argparse import (
     Namespace as arg_Namespace,
     ArgumentParser,
+    RawTextHelpFormatter,
 )
 
 # additional libs
@@ -383,33 +384,34 @@ def log_critical(message):
 def parse_arguments() -> arg_Namespace:
     parser = ArgumentParser(
         prog='open-pnp.py',
-        description='This is a basic implementation of the Cisco PnP protocol. It is intended to roll out image updates'
-                    ' and configurations for Cisco IOS/IOS-XE devices on day0.',
-        # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        epilog='Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+        description='This is a basic implementation of the Cisco PnP protocol. It is intended to'
+                    '\nroll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.'
+                    '\n\nWritten by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+        formatter_class=RawTextHelpFormatter,
+        epilog='Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images',
     )
-    parser.add_argument('--bind_pnp_server', '-b', type=str,
+    parser.add_argument('-b', '--bind_pnp_server', type=str,
                         help='Bind PnP server to IP-address. (default: 0.0.0.0)')
-    parser.add_argument('--port', '-p', type=int,
+    parser.add_argument('-p', '--port', type=int,
                         help='TCP port to listen on. (default: 8080)')
-    parser.add_argument('--time_format', type=str,
-                        help='Format string to render time. (default: %%Y-%%m-%%dT%%H:%%M:%%S)')
-    parser.add_argument('--status_refresh', '-r', type=int,
+    parser.add_argument('-r', '--status_refresh', type=int,
                         help='Time in seconds to refresh PnP server status page. (default: 60)')
-    parser.add_argument('--debug', default=False, action="store_const", const=True,
-                        help='Enable Debug output send to "log_file".')
-    parser.add_argument('--log_to_console', default=False, action="store_const", const=True,
-                        help='Enable debug output send to stdout (requires --debug).')
-    parser.add_argument('--log_file', type=str,
-                        help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
+    parser.add_argument('--config_file', type=str,
+                        help='Path/name of open PnP server config file. (default: open-pnp.toml)')
+    parser.add_argument('--config_url', type=str,
+                        help='Download URL for config files. I.e. http://192.168.10.133:8080/configs')
     parser.add_argument('--image_data', type=str,
                         help='File containing the image description. (default: images.toml)')
     parser.add_argument('--image_url', type=str,
                         help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
-    parser.add_argument('--config_url', type=str,
-                        help='Download URL for config files. I.e. http://192.168.10.133:8080/configs')
-    parser.add_argument('--config_file', type=str,
-                        help='Path/name of open PnP server config file. (default: open-pnp.toml)')
+    parser.add_argument('--debug', default=False, action="store_const", const=True,
+                        help='Enable Debug output send to "log_file".')
+    parser.add_argument('--log_file', type=str,
+                        help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
+    parser.add_argument('--log_to_console', default=False, action="store_const", const=True,
+                        help='Enable debug output send to stdout (requires --debug).')
+    parser.add_argument('--time_format', type=str,
+                        help='Format string to render time. (default: %%Y-%%m-%%dT%%H:%%M:%%S)')
 
     return parser.parse_args()
 
@@ -790,10 +792,10 @@ if __name__ == '__main__':
         cli.show_server_banner = lambda *args: None
 
     if SETTINGS.image_url == '':
-        print(f'image_url not set, check {SETTINGS.cfg_file}')
+        print(f'image_url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
         exit(1)
     if SETTINGS.config_url == '':
-        print(f'config_url not set, check {SETTINGS.cfg_file}')
+        print(f'config_url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
         exit(1)
 
     if SETTINGS.debug:
