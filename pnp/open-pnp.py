@@ -30,6 +30,8 @@
 # 2023-01-29: rework of status page, make table body scrollable
 # 2023-02-01: added cli options, changed debug/log output
 #             cleanup: removed global variables
+# 2023-02-22: removed regex -> was not working with PID: ISR4451-X/K9
+#             added PNP_SERVER_VERSION
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
@@ -37,7 +39,7 @@
 # system libs
 import logging
 from logging.handlers import RotatingFileHandler
-from re import compile as re_compile
+# from re import compile as re_compile
 from time import strftime
 from typing import Optional, List, Dict, Any
 from requests import head
@@ -54,6 +56,8 @@ from xmltodict import parse as xml_parse
 from ifaddr import get_adapters
 from tomli import load as toml_load
 from tomli import TOMLDecodeError
+
+PNP_SERVER_VERSION = '20230222.v1.0.0'
 
 
 class Settings:
@@ -386,9 +390,12 @@ def parse_arguments() -> arg_Namespace:
         prog='open-pnp.py',
         description='This is a basic implementation of the Cisco PnP protocol. It is intended to'
                     '\nroll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.'
-                    '\n\nWritten by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+                    '\n'
+                    f'\nVersion: {PNP_SERVER_VERSION}'
+                    ', Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
         formatter_class=RawTextHelpFormatter,
-        epilog='Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images',
+        epilog='Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs '
+               '--image_url http://192.168.10.133:8080/images',
     )
     parser.add_argument('-b', '--bind_pnp_server', type=str,
                         help='Bind PnP server to IP-address. (default: 0.0.0.0)')
@@ -529,14 +536,16 @@ def pnp_bye(udi: str, correlator: str) -> str:
 
 
 def create_new_device(udi: str, src_add: str):
-    # serial_num_re = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
-    # PID:ISR4451-X/K9,VID:V08,SN:FCZ230640AB
+    # sample udi: PID:ISR4451-X/K9,VID:V08,SN:FCZ230640AB
+    # serial_num_re = re_compile(r'PID:(?P<product_id>[\w\/]+(?:-\w+)*),'
+    #                            r'VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
+    # platform, hw_rev, serial = serial_num_re.findall(udi)[0]
+
     _udi = udi.split(',')
     platform = _udi[0].split(':')[1]
     hw_rev = _udi[1].split(':')[1]
     serial = _udi[2].split(':')[1]
-    # print(udi)
-    # platform, hw_rev, serial = serial_num_re.findall(udi)[0]
+
     devices[udi] = Device(
         udi=udi,
         first_seen=strftime(SETTINGS.time_format),
@@ -598,10 +607,11 @@ def get_local_ip_addresses() -> List[str]:
     _addresses = []
     adapters = get_adapters()
     for adapter in adapters:
+        ip_addr = ''
         for ip in adapter.ips:
             drop_ip = False
             if ip.is_IPv4:
-                ip_addr= ip.ip
+                ip_addr = ip.ip
             elif ip.is_IPv6:
                 ip_addr = ip.ip[0]
             for entry in ['127.', 'fe80::', '::1']:
@@ -632,6 +642,7 @@ def status():
         'config_url': SETTINGS.config_url,
         'image_url': SETTINGS.image_url,
         'debug': SETTINGS.debug,
+        'pnp_server_version': PNP_SERVER_VERSION,
     }
     result = render_template('status.html', **jinja_context)
     return Response(result)
