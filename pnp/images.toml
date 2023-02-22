@@ -57,3 +57,15 @@ version = "17.6.4"
 md5 = "a7e8ff2f05678db21a5c795d711beec7"
 size = 794317769 
 models = ["ISR4451-X/K9"]
+
+["asr1002x-universalk9.17.06.04.SPA.bin"]
+version = "17.6.4"
+md5 = "e78b1a64499faf0e4bef732d19a229fb"
+size = 707129250 
+models = ["ASR1002-X"]
+
+["asr1001x-universalk9.17.06.04.SPA.bin"]
+version = "17.6.4"
+md5 = "ba879a944ecc61236a994a24420d5382"
+size = 726791342 
+models = ["ASR1001-X"]
