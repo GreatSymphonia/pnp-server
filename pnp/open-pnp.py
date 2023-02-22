@@ -529,8 +529,14 @@ def pnp_bye(udi: str, correlator: str) -> str:
 
 
 def create_new_device(udi: str, src_add: str):
-    serial_num_re = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
-    platform, hw_rev, serial = serial_num_re.findall(udi)[0]
+    # serial_num_re = re_compile(r'PID:(?P<product_id>\w+(?:-\w+)*),VID:(?P<hw_version>\w+),SN:(?P<serial_number>\w+)')
+    # PID:ISR4451-X/K9,VID:V08,SN:FCZ230640AB
+    _udi = udi.split(',')
+    platform = _udi[0].split(':')[1]
+    hw_rev = _udi[1].split(':')[1]
+    serial = _udi[2].split(':')[1]
+    # print(udi)
+    # platform, hw_rev, serial = serial_num_re.findall(udi)[0]
     devices[udi] = Device(
         udi=udi,
         first_seen=strftime(SETTINGS.time_format),

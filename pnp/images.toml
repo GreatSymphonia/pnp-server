@@ -51,3 +51,9 @@ version = "17.6.1a"
 md5 = "492f47e99136de9e0982c755ac1e1972"
 size = 634708372
 models = ["IR1101-K9"]
+
+["isr4400-universalk9.17.06.04.SPA.bin"]
+version = "17.6.4"
+md5 = "a7e8ff2f05678db21a5c795d711beec7"
+size = 794317769 
+models = ["ISR4451-X/K9"]
