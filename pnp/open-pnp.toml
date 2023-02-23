@@ -11,3 +11,4 @@
 # image_data = "images.toml"
 # image_url = "http://192.168.10.133:8080/images"
 # config_url = "http://192.168.10.133:8080/configs"
+# default_cfg = "DEFAULT.cfg"

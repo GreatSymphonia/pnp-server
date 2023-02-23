@@ -32,9 +32,12 @@
 #             cleanup: removed global variables
 # 2023-02-22: removed regex -> was not working with PID: ISR4451-X/K9
 #             added PNP_SERVER_VERSION
-#
+# 2023-02-23: added cli option -v/--version, --default_cfg
+
 # pip install flask xmltodict requests ifaddr tomli
 #
+# ToDo:
+#       add remove inactive job on IOS-XE devices if no space for image update
 
 # system libs
 import logging
@@ -57,13 +60,14 @@ from ifaddr import get_adapters
 from tomli import load as toml_load
 from tomli import TOMLDecodeError
 
-PNP_SERVER_VERSION = '20230222.v1.0.0'
+PNP_SERVER_VERSION = '20230223.v1.0.1'
 
 
 class Settings:
     def __init__(
             self,
             cli_args: Dict[str, any],
+            version: bool = False,
             cfg_file: Optional[str] = 'open-pnp.toml',
             image_data: Optional[str] = 'images.toml',
             bind_pnp_server: Optional[str] = '0.0.0.0',
@@ -75,10 +79,11 @@ class Settings:
             log_file: Optional[str] = 'log/pnp_debug.log',
             image_url: Optional[str] = '',
             config_url: Optional[str] = '',
-            default_cfg_file: Optional[str] = 'DEFAULT.cfg',
+            default_cfg: Optional[str] = 'DEFAULT.cfg',
     ):
         self.__settings = {
             'cfg_file': cfg_file,
+            'version': version,
             'image_data': image_data,
             'bind_pnp_server': bind_pnp_server,
             'port': port,
@@ -89,7 +94,7 @@ class Settings:
             'log_file': log_file,
             'image_url': image_url,
             'config_url': config_url,
-            'default_cfg_file': default_cfg_file,
+            'default_cfg_file': default_cfg,
         }
         self.__args = {}
         self.__set_cli_args(cli_args)
@@ -114,6 +119,10 @@ class Settings:
     @property
     def cfg_file(self) -> str:
         return self.__settings['cfg_file']
+
+    @property
+    def version(self) -> bool:
+        return self.__settings['version']
 
     @property
     def image_data(self) -> str:
@@ -156,8 +165,8 @@ class Settings:
         return self.__settings['config_url']
 
     @property
-    def default_cfg_file(self) -> str:
-        return self.__settings['default_cfg_file']
+    def default_cfg(self) -> str:
+        return self.__settings['default_cfg']
 
 
 class SoftwareImage:
@@ -391,8 +400,7 @@ def parse_arguments() -> arg_Namespace:
         description='This is a basic implementation of the Cisco PnP protocol. It is intended to'
                     '\nroll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.'
                     '\n'
-                    f'\nVersion: {PNP_SERVER_VERSION}'
-                    ', Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+                    f'\n{PNP_SERVER_VERSION} | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
         formatter_class=RawTextHelpFormatter,
         epilog='Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs '
                '--image_url http://192.168.10.133:8080/images',
@@ -403,6 +411,8 @@ def parse_arguments() -> arg_Namespace:
                         help='TCP port to listen on. (default: 8080)')
     parser.add_argument('-r', '--status_refresh', type=int,
                         help='Time in seconds to refresh PnP server status page. (default: 60)')
+    parser.add_argument('-v', '--version', default=False, action='store_const', const=True,
+                        help='Print open-pnp-server version and exit')
     parser.add_argument('--config_file', type=str,
                         help='Path/name of open PnP server config file. (default: open-pnp.toml)')
     parser.add_argument('--config_url', type=str,
@@ -411,11 +421,13 @@ def parse_arguments() -> arg_Namespace:
                         help='File containing the image description. (default: images.toml)')
     parser.add_argument('--image_url', type=str,
                         help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
-    parser.add_argument('--debug', default=False, action="store_const", const=True,
+    parser.add_argument('--debug', default=False, action='store_const', const=True,
                         help='Enable Debug output send to "log_file".')
+    parser.add_argument('--default_cfg', type=str,
+                        help='default config to use if no device specific config is found. (default: DEFAULT.cfg)')
     parser.add_argument('--log_file', type=str,
                         help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
-    parser.add_argument('--log_to_console', default=False, action="store_const", const=True,
+    parser.add_argument('--log_to_console', default=False, action='store_const', const=True,
                         help='Enable debug output send to stdout (requires --debug).')
     parser.add_argument('--time_format', type=str,
                         help='Format string to render time. (default: %%Y-%%m-%%dT%%H:%%M:%%S)')
@@ -503,7 +515,7 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     cfg_file = f'{device.serial}.cfg'
     response = head(f'{SETTINGS.config_url}/{cfg_file}')
     if response.status_code != 200:  # SERIAL.cfg not found
-        cfg_file = SETTINGS.default_cfg_file
+        cfg_file = SETTINGS.default_cfg
         response = head(f'{SETTINGS.config_url}/{cfg_file}')
         if response.status_code != 200:  # DEFAULT.cfg also not found
             device.error_code = ERROR.ERROR_NO_CFG_FILE
@@ -797,6 +809,11 @@ if __name__ == '__main__':
     PNPFLOW = PnpFlow()
     SETTINGS = Settings(vars(parse_arguments()))
     SETTINGS.update(SETTINGS.cfg_file)
+
+    if SETTINGS.version:
+        print(PNP_SERVER_VERSION)
+        exit(0)
+
     IMAGES = Images(SETTINGS.image_data)
 
     devices: Dict[str, Device] = {}
@@ -835,6 +852,7 @@ if __name__ == '__main__':
     else:
         print(f'Status page running on : http://{SETTINGS.bind_pnp_server}:{SETTINGS.port}')
     print()
-    print(f'Writen by thl-cmk, see https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision')
+    print(f'{PNP_SERVER_VERSION} | '
+          f'Written by thl-cmk, see https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision')
     print()
     app.run(host=SETTINGS.bind_pnp_server, port=SETTINGS.port)
