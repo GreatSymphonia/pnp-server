@@ -10,12 +10,15 @@
             <!-- <applyto>startup</applyto> -->  <!-- don't now where to place this -->
             <!-- <abortonsyntaxfault/> -->       <!-- don't now where to place this -->
         </config>
+        {% if reload_delay is defined %}
         <reload>
             <reason>pnp device config</reason>
-            <delayIn>{{ delay }}</delayIn>
+            <delayIn>{{ reload_delay }}</delayIn>
             <user>pnp-device-config</user>
             <saveConfig>true</saveConfig>
         </reload>
-<!--        <noReload/>-->
+        {% else %}
+            <noReload/>
+        {% endif %}
     </request>
 </pnp>

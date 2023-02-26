@@ -120,16 +120,20 @@ to use the PnP server you need to configure the server by modifying the followin
 #### Global settings [**open-pnp.toml**](/pnp/open-pnp.toml)
 
 ```
+# [settings]
 # bind_pnp_server = "0.0.0.0"
+# bind_pnp_server = "::"
 # port = 8080
-# time_format = "%Y-%m-%dT%H:%M:%S"
-# status_refresh = 60
+# time_format = "%y-%m-%dt%h:%m:%s"
+# status_refresh = 10
 # debug = false
-# log_to_console = false
+# log_to_file = true
 # log_file = "log/pnp_debug.log"
+# default_cfg_file = "default.cfg"
 # image_data = "images.toml"
-# image_base_url = "http://192.168.10.133:8080/images"
-# config_base_url = "http://192.168.10.133:8080/configs"
+# image_url = "http://192.168.10.133:8080/images"
+# config_url = "http://192.168.10.133:8080/configs"
+# default_cfg = "DEFAULT.cfg"
 ```
 
 - **bind_pnp_server**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
@@ -142,6 +146,7 @@ to use the PnP server you need to configure the server by modifying the followin
 - **image_data**: the file containing the data of your IOS/IOS-XE images
 - **image_base_url**: the base URL for your images 
 - **config_base_url**: the base URL for your configuration files
+- **default_cfg**: default config to use if no device specific config is found.
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
@@ -170,50 +175,46 @@ models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L",
 ### Command Line Options
 
 With the Command Line Options you can override the default values, and the values from the _open-pnp.toml_ config file.
-With the option --config_file CONFIG_FILE you can specify a costume config file to use instead of _open.pnp.toml_.   
+With the option --config_file CONFIG_FILE you can specify a costume config file to use instead of _open-pnp.toml_.   
 
 ```
 $ ./open-pnp.py -h
-usage: open-pnp.py [-h] [--bind_pnp_server BIND_PNP_SERVER] [--port PORT]
-                   [--time_format TIME_FORMAT]
-                   [--status_refresh STATUS_REFRESH] [--debug]
-                   [--log_to_console] [--log_file LOG_FILE]
-                   [--image_data IMAGE_DATA] [--image_url IMAGE_URL]
-                   [--config_url CONFIG_URL] [--config_file CONFIG_FILE]
+usage: open-pnp.py [-h] [-b BIND_PNP_SERVER] [-p PORT] [-r STATUS_REFRESH]
+                   [-v] [--config_file CONFIG_FILE] [--config_url CONFIG_URL]
+                   [--image_data IMAGE_DATA] [--image_url IMAGE_URL] [--debug]
+                   [--default_cfg DEFAULT_CFG] [--log_file LOG_FILE]
+                   [--log_to_console] [--time_format TIME_FORMAT]
 
 This is a basic implementation of the Cisco PnP protocol. It is intended to
-roll out image updates and configurations for Cisco IOS/IOS-XE devices on
-day0.
+roll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.
 
-optional arguments:
+20230223.v1.0.1 | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org
+
+options:
   -h, --help            show this help message and exit
-  --bind_pnp_server BIND_PNP_SERVER, -b BIND_PNP_SERVER
+  -b BIND_PNP_SERVER, --bind_pnp_server BIND_PNP_SERVER
                         Bind PnP server to IP-address. (default: 0.0.0.0)
-  --port PORT, -p PORT  TCP port to listen on. (default: 8080)
-  --time_format TIME_FORMAT
-                        Format string to render time. (default:
-                        %Y-%m-%dT%H:%M:%S)
-  --status_refresh STATUS_REFRESH, -r STATUS_REFRESH
-                        Time in seconds to refresh PnP server status page.
-                        (default: 60)
-  --debug               Enable Debug output send to "log_file".
-  --log_to_console      Enable debug output send to stdout (requires --debug).
-  --log_file LOG_FILE   Path/name of the logfile. (default: log/pnp_debug.log,
-                        requires --debug)
-  --image_data IMAGE_DATA
-                        File containing the image description. (default:
-                        images.toml)
-  --image_url IMAGE_URL
-                        Download URL for image files. I.e.
-                        http://192.168.10.133:8080/images
-  --config_url CONFIG_URL
-                        Download URL for config files. I.e.
-                        http://192.168.10.133:8080/configs
+  -p PORT, --port PORT  TCP port to listen on. (default: 8080)
+  -r STATUS_REFRESH, --status_refresh STATUS_REFRESH
+                        Time in seconds to refresh PnP server status page. (default: 60)
+  -v, --version         Print open-pnp-server version and exit
   --config_file CONFIG_FILE
-                        Path/name of open PnP server config file. (default:
-                        open-pnp.toml)
+                        Path/name of open PnP server config file. (default: open-pnp.toml)
+  --config_url CONFIG_URL
+                        Download URL for config files. I.e. http://192.168.10.133:8080/configs
+  --image_data IMAGE_DATA
+                        File containing the image description. (default: images.toml)
+  --image_url IMAGE_URL
+                        Download URL for image files. I.e. http://192.168.10.133:8080/images
+  --debug               Enable Debug output send to "log_file".
+  --default_cfg DEFAULT_CFG
+                        default config to use if no device specific config is found. (default: DEFAULT.cfg)
+  --log_file LOG_FILE   Path/name of the logfile. (default: log/pnp_debug.log, requires --debug)
+  --log_to_console      Enable debug output send to stdout (requires --debug).
+  --time_format TIME_FORMAT
+                        Format string to render time. (default: %Y-%m-%dT%H:%M:%S)
 
-Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org
+Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
 
 ```
 
