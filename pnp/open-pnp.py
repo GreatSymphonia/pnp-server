@@ -34,6 +34,8 @@
 #             added PNP_SERVER_VERSION
 # 2023-02-23: added cli option -v/--version, --default_cfg
 # 2023-02-26: reorganized open-pnp.py in to open_pnp_classes.py and open_pnp_utils.py
+# 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
+#
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
@@ -76,7 +78,7 @@ from open_pnp_utils import (
 )
 
 
-PNP_SERVER_VERSION = '20230223.v1.0.1'
+PNP_SERVER_VERSION = '20230227.v1.0.2'
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -279,6 +281,7 @@ def check_update(udi: str):
             device.error_code = ERROR.ERROR_NO_FREE_SPACE
             device.hard_error = True
 
+
 # flask
 app = Flask(__name__, template_folder='./templates')
 
@@ -472,10 +475,10 @@ if __name__ == '__main__':
         cli.show_server_banner = lambda *args: None
 
     if SETTINGS.image_url == '':
-        print(f'image_url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
+        print(f'image-url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
         exit(1)
     if SETTINGS.config_url == '':
-        print(f'config_url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
+        print(f'config-url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
         exit(1)
 
     if SETTINGS.debug:

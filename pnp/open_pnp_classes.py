@@ -62,8 +62,7 @@ class Settings:
             print(f'ERROR: Data file {cfg_file} not found! ({e})')
             exit(1)
         except TOMLDecodeError as e:
-            print(
-                f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
+            print(f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
             exit(2)
 
         self.__settings.update(self.__args)
@@ -106,7 +105,7 @@ class Settings:
 
     @property
     def log_file(self) -> str:
-        return self.__settings['log_file']
+        return self.__settings['log-file']
 
     @property
     def image_url(self) -> str:
@@ -118,7 +117,7 @@ class Settings:
 
     @property
     def default_cfg(self) -> str:
-        return self.__settings['default_cfg']
+        return self.__settings['default-cfg']
 
 
 class SoftwareImage:
@@ -314,6 +313,7 @@ class Images:
     @property
     def images(self) -> Dict[str, Any]:
         return self.__images
+
 
 ERROR = ErrorCodes()
 PNPFLOW = PnpFlow()

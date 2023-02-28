@@ -30,7 +30,7 @@ should deliver the configuration files, copy them in the `configs` subdirectory.
 
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
-**Note**: the PnP server runs on HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
+**Note**: The _**open-pnp**_ server uses HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
 
 ---
 ### Install the PnP server:
@@ -56,7 +56,7 @@ on Linux
 (.venv) :~/cisco_day0_provision/pnp$pip3 install flask xmltodict requests ifaddr tomli
 
 # run the pnp server
-(.venv) :~/cisco_day0_provision/pnp$ ./open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
+(.venv) :~/cisco_day0_provision/pnp$ ./open-pnp.py --config-url  http://192.168.10.133:8080/configs --image-url http://192.168.10.133:8080/images
 
 Running PnP server. Stop with ctrl+c
 Bind to IP-address      : 0.0.0.0
@@ -78,7 +78,7 @@ c:\cisco_day0_provision\pnp>.venv\Scripts\activate.bat
 
 (.venv)c:\cisco_day0_provision\pnp>pip install flask xmltodict requests ifaddr tomli
 
-(.venv)c:\cisco_day0_provision\pnp>python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
+(.venv)c:\cisco_day0_provision\pnp>python open-pnp.py --config-url  http://192.168.10.133:8080/configs --image-url http://192.168.10.133:8080/images
 
 Running PnP server. Stop with ctrl+c
 Bind to IP-address      : ::
@@ -112,7 +112,8 @@ to use the PnP server you need to configure the server by modifying the followin
 - [**_open-pnp.toml_**](/pnp/open-pnp.toml)
 - [**_images.toml_**](/pnp/images.toml)
 
-**NOTE:** after changing the PnP server configuration you need to restart the PnP server.
+**NOTE:** after changing the PnP server configuration you need to reload the PnP server configuration by clicking 
+_**Reload CFG**_ on the status page.
 
 **NOTE:** both files need to be in valid [TOML](https://toml.io/en/) format.
 
@@ -121,32 +122,32 @@ to use the PnP server you need to configure the server by modifying the followin
 
 ```
 # [settings]
-# bind_pnp_server = "0.0.0.0"
-# bind_pnp_server = "::"
+# bind-pnp-server = "0.0.0.0"
+# bind-pnp-server = "::"
 # port = 8080
-# time_format = "%y-%m-%dt%h:%m:%s"
-# status_refresh = 10
+# time-format = "%y-%m-%dt%h:%m:%s"
+# status-refresh = 10
 # debug = false
-# log_to_file = true
-# log_file = "log/pnp_debug.log"
-# default_cfg_file = "default.cfg"
-# image_data = "images.toml"
-# image_url = "http://192.168.10.133:8080/images"
-# config_url = "http://192.168.10.133:8080/configs"
-# default_cfg = "DEFAULT.cfg"
+# log-to-file = true
+# log-file = "log/pnp_debug.log"
+# default-cfg-file = "default.cfg"
+# image-data = "images.toml"
+# image-url = "http://192.168.10.133:8080/images"
+# config-url = "http://192.168.10.133:8080/configs"
+# default-cfg = "DEFAULT.cfg"
 ```
 
-- **bind_pnp_server**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
+- **bind-pnp-server**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
 - **port**: the TCP port the server should listen on (remember for port 80 the server needs to run as root)
-- **time_format**: the time format used in the status page
-- **status_refresh**: the interval in seconds the status page will automatically reload
+- **time-format**: the time format used in the status page
+- **status-refresh**: the interval in seconds the status page will automatically reload
 - **debug**: enable debug output with `debug = true`. Can be `true` or `false`.
-- **log_file**: path/name of the log file
-- **log_to_console**: send debug output to stdout. Can be `true` or `false`.
-- **image_data**: the file containing the data of your IOS/IOS-XE images
-- **image_base_url**: the base URL for your images 
-- **config_base_url**: the base URL for your configuration files
-- **default_cfg**: default config to use if no device specific config is found.
+- **log-file**: path/name of the log file
+- **log-to-console**: send debug output to stdout. Can be `true` or `false`.
+- **image-data**: the file containing the data of your IOS/IOS-XE images
+- **image-base-url**: the base URL for your images 
+- **config-base-url**: the base URL for your configuration files
+- **default-cfg**: default config to use if no device specific config is found.
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
@@ -175,52 +176,54 @@ models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L",
 ### Command Line Options
 
 With the Command Line Options you can override the default values, and the values from the _open-pnp.toml_ config file.
-With the option --config_file CONFIG_FILE you can specify a costume config file to use instead of _open-pnp.toml_.   
+With the option --config-file CONFIG-FILE you can specify a costume config file to use instead of _open-pnp.toml_.   
 
 ```
 $ ./open-pnp.py -h
 usage: open-pnp.py [-h] [-b BIND_PNP_SERVER] [-p PORT] [-r STATUS_REFRESH]
-                   [-v] [--config_file CONFIG_FILE] [--config_url CONFIG_URL]
-                   [--image_data IMAGE_DATA] [--image_url IMAGE_URL] [--debug]
-                   [--default_cfg DEFAULT_CFG] [--log_file LOG_FILE]
-                   [--log_to_console] [--time_format TIME_FORMAT]
+                   [-v] [--config-file CONFIG_FILE] [--config-url CONFIG_URL]
+                   [--image-data IMAGE_DATA] [--image-url IMAGE_URL] [--debug]
+                   [--default-cfg DEFAULT_CFG] [--log-file LOG_FILE]
+                   [--log-to-console] [--time-format TIME_FORMAT]
 
 This is a basic implementation of the Cisco PnP protocol. It is intended to
 roll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.
 
-20230223.v1.0.1 | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org
+20230227.v1.0.2 | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org
 
-options:
+optional arguments:
   -h, --help            show this help message and exit
-  -b BIND_PNP_SERVER, --bind_pnp_server BIND_PNP_SERVER
+  -b BIND_PNP_SERVER, --bind-pnp-server BIND_PNP_SERVER
                         Bind PnP server to IP-address. (default: 0.0.0.0)
   -p PORT, --port PORT  TCP port to listen on. (default: 8080)
-  -r STATUS_REFRESH, --status_refresh STATUS_REFRESH
+  -r STATUS_REFRESH, --status-refresh STATUS_REFRESH
                         Time in seconds to refresh PnP server status page. (default: 60)
   -v, --version         Print open-pnp-server version and exit
-  --config_file CONFIG_FILE
+  --config-file CONFIG_FILE
                         Path/name of open PnP server config file. (default: open-pnp.toml)
-  --config_url CONFIG_URL
+  --config-url CONFIG_URL
                         Download URL for config files. I.e. http://192.168.10.133:8080/configs
-  --image_data IMAGE_DATA
+  --image-data IMAGE_DATA
                         File containing the image description. (default: images.toml)
-  --image_url IMAGE_URL
+  --image-url IMAGE_URL
                         Download URL for image files. I.e. http://192.168.10.133:8080/images
-  --debug               Enable Debug output send to "log_file".
-  --default_cfg DEFAULT_CFG
+  --debug               Enable Debug output send to "log-file".
+  --default-cfg DEFAULT_CFG
                         default config to use if no device specific config is found. (default: DEFAULT.cfg)
-  --log_file LOG_FILE   Path/name of the logfile. (default: log/pnp_debug.log, requires --debug)
-  --log_to_console      Enable debug output send to stdout (requires --debug).
-  --time_format TIME_FORMAT
+  --log-file LOG_FILE   Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) 
+  --log-to-console      Enable debug output send to stdout (requires --debug).
+  --time-format TIME_FORMAT
                         Format string to render time. (default: %Y-%m-%dT%H:%M:%S)
 
-Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs --image_url http://192.168.10.133:8080/images
+Usage: python open-pnp.py --config-url  http://192.168.10.133:8080/configs --image-url http://192.168.10.133:8080/images
 
 ```
 
 ---
 ### PnP server discovery
-The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname _pnpserver.your.domain_. Replaced _your.domain_ by the DNS domain the device receives via DHCP. With DHCP, the DHCP server needs to send the vendor option 43.
+The IOS-XE device can discover a PnP server via DHCP option 43 or using DNS lookup for the hostname 
+_pnpserver.your.domain_. Replaced _your.domain_ by the DNS domain the device receives via DHCP. With 
+DHCP, the DHCP server needs to send the vendor option 43.
 
 Structure of DHCP option 43:
 

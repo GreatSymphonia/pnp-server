@@ -60,42 +60,42 @@ def log_critical(message: str, debug: bool):
         log.critical(message)
 
 
-def parse_arguments(PNP_SERVER_VERSION: str) -> arg_Namespace:
+def parse_arguments(pnp_server_version: str) -> arg_Namespace:
     parser = ArgumentParser(
         prog='open-pnp.py',
         description='This is a basic implementation of the Cisco PnP protocol. It is intended to'
                     '\nroll out image updates and configurations for Cisco IOS/IOS-XE devices on day0.'
                     '\n'
-                    f'\n{PNP_SERVER_VERSION} | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
+                    f'\n{pnp_server_version} | Written by: thl-cmk, for more information see: https://thl-cmk.hopto.org',
         formatter_class=RawTextHelpFormatter,
-        epilog='Usage: python open-pnp.py --config_url  http://192.168.10.133:8080/configs '
-               '--image_url http://192.168.10.133:8080/images',
+        epilog='Usage: python open-pnp.py --config-url  http://192.168.10.133:8080/configs '
+               '--image-url http://192.168.10.133:8080/images',
     )
-    parser.add_argument('-b', '--bind_pnp_server', type=str,
+    parser.add_argument('-b', '--bind-pnp-server', type=str,
                         help='Bind PnP server to IP-address. (default: 0.0.0.0)')
     parser.add_argument('-p', '--port', type=int,
                         help='TCP port to listen on. (default: 8080)')
-    parser.add_argument('-r', '--status_refresh', type=int,
+    parser.add_argument('-r', '--status-refresh', type=int,
                         help='Time in seconds to refresh PnP server status page. (default: 60)')
     parser.add_argument('-v', '--version', default=False, action='store_const', const=True,
                         help='Print open-pnp-server version and exit')
-    parser.add_argument('--config_file', type=str,
+    parser.add_argument('--config-file', type=str,
                         help='Path/name of open PnP server config file. (default: open-pnp.toml)')
-    parser.add_argument('--config_url', type=str,
+    parser.add_argument('--config-url', type=str,
                         help='Download URL for config files. I.e. http://192.168.10.133:8080/configs')
-    parser.add_argument('--image_data', type=str,
+    parser.add_argument('--image-data', type=str,
                         help='File containing the image description. (default: images.toml)')
-    parser.add_argument('--image_url', type=str,
+    parser.add_argument('--image-url', type=str,
                         help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
     parser.add_argument('--debug', default=False, action='store_const', const=True,
-                        help='Enable Debug output send to "log_file".')
-    parser.add_argument('--default_cfg', type=str,
+                        help='Enable Debug output send to "log-file".')
+    parser.add_argument('--default-cfg', type=str,
                         help='default config to use if no device specific config is found. (default: DEFAULT.cfg)')
-    parser.add_argument('--log_file', type=str,
+    parser.add_argument('--log-file', type=str,
                         help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
-    parser.add_argument('--log_to_console', default=False, action='store_const', const=True,
+    parser.add_argument('--log-to-console', default=False, action='store_const', const=True,
                         help='Enable debug output send to stdout (requires --debug).')
-    parser.add_argument('--time_format', type=str,
+    parser.add_argument('--time-format', type=str,
                         help='Format string to render time. (default: %%Y-%%m-%%dT%%H:%%M:%%S)')
 
     return parser.parse_args()
