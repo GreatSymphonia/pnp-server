@@ -1,31 +1,42 @@
+{#
+
+# Author: thl-cmk[at]outlook[dot]com
+# URL   : https://thl-cmk.hopto.org
+# Date  : 2022-12-10
+# File  : status.html
+
+#
+# 2023-03-13: moved error columns to debug output
+#
+
+#}
+
 {% macro header_row() %}
     <tr>
         <th>Count</th>
         <th>Action</th>
-        <th>Serial  number</th>
+        <th>Serial number</th>
         <th>Platform</th>
-        <th>HW  rev.</th>
+        <th>HW rev.</th>
         <th>IP-Address</th>
-        <th>PnP  flow</th>
+        <th>PnP flow</th>
         <th>Status</th>
-        <th>First  seen</th>
-        <th>Last  contact</th>
-        <th>Current  job</th>
-        <th>Current  version</th>
-        <th>Target  version</th>
+        <th>First seen</th>
+        <th>Last contact</th>
+        <th>Current job</th>
+        <th>Current version</th>
+        <th>Target version</th>
+        <th>Last message</th>
         {% if debug %}
-            <th>Current  image</th>
-            <th>Target  image</th>
+            <th>Current image</th>
+            <th>Target image</th>
             <th>Size</th>
-            <th>Free  space</th>
+            <th>Free space</th>
             <th>Destination</th>
-        {% endif %}
-        <!-- <th>Error  code</th> -->
-        <!-- <th>Last  error</th> -->
-        <!-- <th>Last  message</th> -->
-        <!-- <th>Error  count</th> -->
-        <!-- <th>Hard  error</th> -->
-        {% if debug %}
+            <th>Error code</th>
+            <th>Last error</th>
+            <th>Error count</th>
+            <th>Hard error</th>
             <th>Backoff</th>
         {% endif %}
     </tr>
@@ -35,9 +46,9 @@
     {% set min_rows = 50 %}
     {% if devices|length < min_rows %}
         {% set current_rows = devices|length %}
-        {% set num_columns = 17 %}
+        {% set num_columns = 13 %}
         {%if debug %}
-            {% set num_columns = num_columns + 6 %}
+            {% set num_columns = num_columns + 10 %}
         {% endif %}
         {% for i in range (0, min_rows - current_rows) %}
         <tr>
@@ -188,19 +199,17 @@
                         <td>{{ device.current_job }}</td>
                         <td>{{ device.version }}</td>
                         <td>{{ device.target_image.version }}</td>
+                        <td>{{ device.error_code_readable }}</td>
                         {% if debug %}
                             <td>{{ device.image }}</td>
                             <td> <a href="{{ image_base_url }}/{{ device.target_image.image }}" target="_blank">{{device.target_image.image }}</a></td>
                             <td>{{ device.target_image.size }}</td>
                             <td>{{ device.destination_free }}</td>
                             <td>{{ device.destination_name }}</td>
-                        {% endif %}
-                        <!-- <td>{{ device.error_code }}</td> -->
-                        <!-- <td>{{ device.error_code_readable }}</td> -->
-                        <!-- <td>{{ device.error_message }}</td> -->
-                        <!-- <td>{{ device.error_count }}</td> -->
-                        <!-- <td>{{ device.hard_error }}</td> -->
-                        {% if debug %}
+                            <td>{{ device.error_code }}</td>
+                            <td>{{ device.error_message }}</td>
+                            <td>{{ device.error_count }}</td>
+                            <td>{{ device.hard_error }}</td>
                             <td>{{ device.backoff }}</td>
                          {% endif %}
                     </tr>

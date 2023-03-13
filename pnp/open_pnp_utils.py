@@ -8,6 +8,10 @@
 # Date  : 2023-02-26
 # File  : open_pnp_utils.py
 
+#
+# 2023-03-13: added --no-default-cfg option
+#
+
 from typing import List
 import logging
 from logging.handlers import RotatingFileHandler
@@ -91,6 +95,9 @@ def parse_arguments(pnp_server_version: str) -> arg_Namespace:
                         help='Enable Debug output send to "log-file".')
     parser.add_argument('--default-cfg', type=str,
                         help='default config to use if no device specific config is found. (default: DEFAULT.cfg)')
+    parser.add_argument('--no-default-cfg', default=False, action='store_const', const=True,
+                        help='Disables default config file for PnP devices. This option takes precedence over all '
+                             '"--default-cfg" cli options or config entries.')
     parser.add_argument('--log-file', type=str,
                         help='Path/name of the logfile. (default: log/pnp_debug.log, requires --debug) ')
     parser.add_argument('--log-to-console', default=False, action='store_const', const=True,

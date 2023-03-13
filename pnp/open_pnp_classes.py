@@ -8,6 +8,9 @@
 # Date  : 2023-02-26
 # File  : open_pnp_classes.py
 
+#
+# 2023-03-13: fixed default_cfg option
+#             added no_default_cfg option
 
 from typing import Dict, Optional, Any
 from tomli import load as toml_load
@@ -20,7 +23,7 @@ class ErrorCodes:
         100: 'unknown platform',
         101: 'no free space for update',
         102: 'unknown image',
-        103: 'config file not found',
+        103: 'no config file found',
         104: 'image file not found',
 
         1412: 'Invalid input detected (config)',
@@ -114,6 +117,7 @@ class Settings:
             image_url: Optional[str] = '',
             config_url: Optional[str] = '',
             default_cfg: Optional[str] = 'DEFAULT.cfg',
+            no_default_cfg: Optional[bool] = False,
     ):
         self.__settings = {
             'cfg_file': cfg_file,
@@ -129,6 +133,7 @@ class Settings:
             'image_url': image_url,
             'config_url': config_url,
             'default_cfg': default_cfg,
+            'no_default_cfg': no_default_cfg,
         }
         self.__args = {}
         self.__set_cli_args(cli_args)
@@ -202,6 +207,10 @@ class Settings:
     @property
     def default_cfg(self) -> str:
         return self.__settings['default_cfg']
+
+    @property
+    def no_default_cfg(self) -> bool:
+        return self.__settings['no_default_cfg']
 
 
 class SoftwareImage:

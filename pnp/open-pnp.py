@@ -35,7 +35,7 @@
 # 2023-02-23: added cli option -v/--version, --default_cfg
 # 2023-02-26: reorganized open-pnp.py in to open_pnp_classes.py and open_pnp_utils.py
 # 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
-#
+# 2023-03-13: added '--no-default-cfg' option
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
@@ -78,7 +78,7 @@ from open_pnp_utils import (
 )
 
 
-PNP_SERVER_VERSION = '20230227.v1.0.2'
+PNP_SERVER_VERSION = '20230313.v1.0.3'
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -161,9 +161,14 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     cfg_file = f'{device.serial}.cfg'
     response = head(f'{SETTINGS.config_url}/{cfg_file}')
     if response.status_code != 200:  # SERIAL.cfg not found
-        cfg_file = SETTINGS.default_cfg
-        response = head(f'{SETTINGS.config_url}/{cfg_file}')
-        if response.status_code != 200:  # DEFAULT.cfg also not found
+        if not SETTINGS.no_default_cfg:
+            cfg_file = SETTINGS.default_cfg
+            response = head(f'{SETTINGS.config_url}/{cfg_file}')
+            if response.status_code != 200:  # DEFAULT.cfg also not found
+                device.error_code = ERROR.ERROR_NO_CFG_FILE
+                device.hard_error = True
+                return
+        else:
             device.error_code = ERROR.ERROR_NO_CFG_FILE
             device.hard_error = True
             return
