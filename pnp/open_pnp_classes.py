@@ -14,120 +14,6 @@ from tomli import load as toml_load
 from tomli import TOMLDecodeError
 
 
-class Settings:
-    def __init__(
-            self,
-            cli_args: Dict[str, Any],
-            version: bool = False,
-            cfg_file: Optional[str] = 'open-pnp.toml',
-            image_data: Optional[str] = 'images.toml',
-            bind_pnp_server: Optional[str] = '0.0.0.0',
-            port: Optional[int] = 8080,
-            time_format: Optional[str] = '%Y-%m-%dT%H:%M:%S',
-            status_refresh: Optional[int] = 60,
-            debug: Optional[bool] = False,
-            log_to_console: Optional[bool] = False,
-            log_file: Optional[str] = 'log/pnp_debug.log',
-            image_url: Optional[str] = '',
-            config_url: Optional[str] = '',
-            default_cfg: Optional[str] = 'DEFAULT.cfg',
-    ):
-        self.__settings = {
-            'cfg_file': cfg_file,
-            'version': version,
-            'image_data': image_data,
-            'bind_pnp_server': bind_pnp_server,
-            'port': port,
-            'time_format': time_format,
-            'status_refresh': status_refresh,
-            'debug': debug,
-            'log_to_console': log_to_console,
-            'log_file': log_file,
-            'image_url': image_url,
-            'config_url': config_url,
-            'default_cfg_file': default_cfg,
-        }
-        self.__args = {}
-        self.__set_cli_args(cli_args)
-
-    def __set_cli_args(self, cli_args: Dict[str, Any]):
-        self.__args = ({k: v for k, v in cli_args.items() if v})
-        self.__settings.update(self.__args)
-
-    def update(self, cfg_file: str):
-        try:
-            with open(cfg_file, 'rb') as f:
-                self.__settings.update(toml_load(f))
-        except FileNotFoundError as e:
-            print(f'ERROR: Data file {cfg_file} not found! ({e})')
-            exit(1)
-        except TOMLDecodeError as e:
-            print(f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
-            exit(2)
-
-        self.__settings.update(self.__args)
-
-    @property
-    def cfg_file(self) -> str:
-        return self.__settings['cfg_file']
-
-    @property
-    def version(self) -> bool:
-        return self.__settings['version']
-
-    @property
-    def image_data(self) -> str:
-        return self.__settings['image_data']
-
-    @property
-    def bind_pnp_server(self) -> str:
-        return self.__settings['bind_pnp_server']
-
-    @property
-    def port(self) -> int:
-        return self.__settings['port']
-
-    @property
-    def time_format(self) -> str:
-        return self.__settings['time_format']
-
-    @property
-    def status_refresh(self) -> int:
-        return self.__settings['status_refresh']
-
-    @property
-    def debug(self) -> bool:
-        return self.__settings['debug']
-
-    @property
-    def log_to_console(self) -> bool:
-        return self.__settings['log_to_console']
-
-    @property
-    def log_file(self) -> str:
-        return self.__settings['log-file']
-
-    @property
-    def image_url(self) -> str:
-        return self.__settings['image_url']
-
-    @property
-    def config_url(self) -> str:
-        return self.__settings['config_url']
-
-    @property
-    def default_cfg(self) -> str:
-        return self.__settings['default-cfg']
-
-
-class SoftwareImage:
-    def __init__(self, image: str, version: str, md5: str, size: int,):
-        self.image: str = image
-        self.version: str = version
-        self.md5: str = md5
-        self.size: int = size
-
-
 class ErrorCodes:
     __readable = {
         0: 'No error',
@@ -209,6 +95,121 @@ class PnpFlow:
 
     def readable(self, state: int):
         return self.__readable.get(state, 'unknown')
+
+
+class Settings:
+    def __init__(
+            self,
+            cli_args: Dict[str, Any],
+            version: bool = False,
+            cfg_file: Optional[str] = 'open-pnp.toml',
+            image_data: Optional[str] = 'images.toml',
+            bind_pnp_server: Optional[str] = '0.0.0.0',
+            port: Optional[int] = 8080,
+            time_format: Optional[str] = '%Y-%m-%dT%H:%M:%S',
+            status_refresh: Optional[int] = 60,
+            debug: Optional[bool] = False,
+            log_to_console: Optional[bool] = False,
+            log_file: Optional[str] = 'log/pnp_debug.log',
+            image_url: Optional[str] = '',
+            config_url: Optional[str] = '',
+            default_cfg: Optional[str] = 'DEFAULT.cfg',
+    ):
+        self.__settings = {
+            'cfg_file': cfg_file,
+            'version': version,
+            'image_data': image_data,
+            'bind_pnp_server': bind_pnp_server,
+            'port': port,
+            'time_format': time_format,
+            'status_refresh': status_refresh,
+            'debug': debug,
+            'log_to_console': log_to_console,
+            'log_file': log_file,
+            'image_url': image_url,
+            'config_url': config_url,
+            'default_cfg': default_cfg,
+        }
+        self.__args = {}
+        self.__set_cli_args(cli_args)
+
+    def __set_cli_args(self, cli_args: Dict[str, Any]):
+        self.__args = ({k: v for k, v in cli_args.items() if v})
+        self.__settings.update(self.__args)
+
+    def update(self, cfg_file: str):
+        try:
+            with open(cfg_file, 'rb') as f:
+                self.__settings.update(toml_load(f))
+        except FileNotFoundError as e:
+            print(f'ERROR: Data file {cfg_file} not found! ({e})')
+            exit(1)
+        except TOMLDecodeError as e:
+            print(
+                f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
+            exit(2)
+
+        self.__settings.update(self.__args)
+
+    @property
+    def cfg_file(self) -> str:
+        return self.__settings['cfg_file']
+
+    @property
+    def version(self) -> bool:
+        return self.__settings['version']
+
+    @property
+    def image_data(self) -> str:
+        return self.__settings['image_data']
+
+    @property
+    def bind_pnp_server(self) -> str:
+        return self.__settings['bind_pnp_server']
+
+    @property
+    def port(self) -> int:
+        return self.__settings['port']
+
+    @property
+    def time_format(self) -> str:
+        return self.__settings['time_format']
+
+    @property
+    def status_refresh(self) -> int:
+        return self.__settings['status_refresh']
+
+    @property
+    def debug(self) -> bool:
+        return self.__settings['debug']
+
+    @property
+    def log_to_console(self) -> bool:
+        return self.__settings['log_to_console']
+
+    @property
+    def log_file(self) -> str:
+        return self.__settings['log_file']
+
+    @property
+    def image_url(self) -> str:
+        return self.__settings['image_url']
+
+    @property
+    def config_url(self) -> str:
+        return self.__settings['config_url']
+
+    @property
+    def default_cfg(self) -> str:
+        return self.__settings['default_cfg']
+
+
+class SoftwareImage:
+    def __init__(self, image: str, version: str, md5: str, size: int,):
+        self.image: str = image
+        self.version: str = version
+        self.md5: str = md5
+        self.size: int = size
 
 
 class Device:
