@@ -19,4 +19,4 @@
 2023-02-23: added cli option -v/--version, --default_cfg
 2023-02-26: reorganized open-pnp.py in to open_pnp_classes.py and open_pnp_utils.py
 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
-
+2023-03-13: fixed default-cfg option, added --no-default-cfg option, moved error codes in status.html in to debug section
