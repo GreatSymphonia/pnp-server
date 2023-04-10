@@ -35,6 +35,8 @@ This project is based on https://github.com/oliverl-21/Open-PnP-Server
 Place the IOS/IOS-XE images on an HTTP server where the new devices can download them. If you use this PnP server to 
 provide the images place them in the `images` subdirectory. For the images I would recommend using a _real_ HTTP server.
 
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
 ---
 ### Configuration files
 Create for each device a configuration file named SERIALNUMBER.cfg. i.e.: [`FCZ094210DS.cfg`](/pnp/configs/FGL223590FL.cfg). 
@@ -44,6 +46,8 @@ should deliver the configuration files, copy them in the `configs` subdirectory.
 **Hint**: you can use different HTTP servers for the images and the configuration files
 
 **Note**: The _**open-pnp**_ server uses HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### Install the PnP server
@@ -117,6 +121,8 @@ You can check if the PnP server is running by opening a web browser and accessin
 
 ![PnP server new status page](pnp-empty-status.png)
 
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
 ---
 ### Configure the PnP server
 
@@ -129,6 +135,8 @@ to use the PnP server you need to configure the server by modifying the followin
 _**Reload CFG**_ on the status page.
 
 **NOTE:** both files need to be in valid [TOML](https://toml.io/en/) format.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 #### Global settings file [**open-pnp.toml**](/pnp/open-pnp.toml)
@@ -163,6 +171,8 @@ _**Reload CFG**_ on the status page.
 - **default-cfg**: default config to use if no device specific config is found.
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 #### _IMAGES_ file [**_images.toml_**](/pnp/images.toml)
@@ -231,6 +241,7 @@ optional arguments:
 Usage: python open-pnp.py --config-url  http://192.168.10.133:8080/configs --image-url http://192.168.10.133:8080/images
 
 ```
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### PnP server discovery
@@ -257,7 +268,9 @@ ip dhcp pool autoinstall
  option 43 ascii 5A1D;K4;B2;I192.168.10.15;J8080
  lease 0 2
 ```
-For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
+For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### PnP Status page
@@ -267,3 +280,5 @@ You can monitor the PnP progress on the PnP server status page.
 ![PnP server status page](sample-pnp-status.png)
 
 **Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates' subdirectory.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
