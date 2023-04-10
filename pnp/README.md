@@ -9,7 +9,7 @@
   * [Install the PNP Server](pnp/README.md#install-the-pnp-srever)
   * [Configure the PNP Server](pnp/README.md#configure-the-pnp-srever)
   * [Global settings file open-pnp.tomel](pnp/README.md#global-settings-file-open-pnptomel)
-  * [IMAGES file images.tomel](pnp/README.md#images-file-imagestomel)
+  * [IMAGES file images.tomel](pnp/README.md#images-file-imagestoml)
   * [Command Line Options](pnp/README.md#command-line-options)
 * [PnP server discovery](pnp/README.md#pnp-server-discovery)
 * [PnP Status page](pnp/README.md#pnp-status-page)
