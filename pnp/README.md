@@ -9,7 +9,7 @@
   * [Install the PNP Server](pnp/README.md#install-the-pnp-server)
   * [Configure the PNP Server](pnp/README.md#configure-the-pnp-server)
   * [Global settings file open-pnp.tomel](pnp/README.md#global-settings-file-open-pnptoml)
-  * [IMAGES file images.tomel](pnp/README.md#images-file-imagestoml)
+  * [Images file images.tomel](pnp/README.md#images-file-imagestoml)
   * [Command Line Options](pnp/README.md#command-line-options)
 * [PnP server discovery](pnp/README.md#pnp-server-discovery)
 * [PnP Status page](pnp/README.md#pnp-status-page)
@@ -175,9 +175,9 @@ _**Reload CFG**_ on the status page.
 [back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
-#### _IMAGES_ file [**_images.toml_**](/pnp/images.toml)
+#### _Images_ file [**_images.toml_**](/pnp/images.toml)
 
-Each entry in the _IMAGES_ file contains
+Each entry in the _Images_ file contains
 - the **name** of the image file as section title
 - the IOS/IOS-XE **version** of the image
 - the **md5** checksum of the image file
