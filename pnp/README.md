@@ -1,10 +1,10 @@
 # Plug and Play (PnP) server for IOS/IOS-XE based devices 
 
-* [Introduction](pnp/README.md#Introduction)
-  * [Acknowledgment](pnp/README.md#Acknowledgment)
-* [Prerequisites](pnp/README.md#Prerequisites)
+* [Introduction](pnp/README.md#introduction)
+  * [Acknowledgment](pnp/README.md#acknowledgment)
+* [Prerequisites](pnp/README.md#prerequisites)
 * [How to use](pnp/README.md#how-to-use)
-  * [IOS/IOS-XE Images](pnp/README.md#IOSIOS-XE-Images)
+  * [IOS/IOS-XE Images](pnp/README.md#iosios-xe-images)
   * [Configuration files](pnp/README.md#configuration-files)
   * [Install the PNP Server](pnp/README.md#install-the-pnp-srever)
   * [Configure the PNP Server](pnp/README.md#configure-the-pnp-srever)
