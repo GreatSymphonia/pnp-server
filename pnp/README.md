@@ -1,5 +1,19 @@
 # Plug and Play (PnP) server for IOS/IOS-XE based devices 
 
+* [Introduction](pnp/README.md#Introduction)
+  * [Acknowledgment](pnp/README.md#Acknowledgment)
+* [Prerequisites](pnp/README.md#Prerequisites)
+* [How to use](pnp/README.md#how-to-use)
+  * [IOS/IOS-XE Images](pnp/README.md#IOSIOS-XE-Images)
+  * [Configuration files](pnp/README.md#configuration-files)
+  * [Install the PNP Server](pnp/README.md#install-the-pnp-srever)
+  * [Configure the PNP Server](pnp/README.md#configure-the-pnp-srever)
+  * [Global settings file open-pnp.tomel](pnp/README.md#global-settings-file-open-pnptomel)
+  * [IMAGES file images.tomel](pnp/README.md#images-file-imagestomel)
+  * [Command Line Options](pnp/README.md#command-line-options)
+* [PnP server discovery](pnp/README.md#pnp-server-discovery)
+* [PnP Status page](pnp/README.md#pnp-status-page)
+
 # Introduction
 
 This is a basic implementation of the Cisco Plug and Play protocol, to fully automate the day0 provisioning of Cisco IOS/IOS-XE devices.
@@ -17,7 +31,6 @@ This project is based on https://github.com/oliverl-21/Open-PnP-Server
 
 ## How to use
 
----
 ### IOS/IOS-XE Images
 Place the IOS/IOS-XE images on an HTTP server where the new devices can download them. If you use this PnP server to 
 provide the images place them in the `images` subdirectory. For the images I would recommend using a _real_ HTTP server.
@@ -33,7 +46,7 @@ should deliver the configuration files, copy them in the `configs` subdirectory.
 **Note**: The _**open-pnp**_ server uses HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
 
 ---
-### Install the PnP server:
+### Install the PnP server
 
 on Linux
 ```
@@ -118,7 +131,7 @@ _**Reload CFG**_ on the status page.
 **NOTE:** both files need to be in valid [TOML](https://toml.io/en/) format.
 
 ---
-#### Global settings [**open-pnp.toml**](/pnp/open-pnp.toml)
+#### Global settings file [**open-pnp.toml**](/pnp/open-pnp.toml)
 
 ```
 # [settings]
