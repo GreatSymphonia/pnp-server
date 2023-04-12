@@ -11,6 +11,9 @@
 #
 # 2023-03-13: fixed default_cfg option
 #             added no_default_cfg option
+# 2023-04-11: changed to load settings from config file (open-pnp.toml by default) in the SETTINGS.__init__
+#             don't exit if cfg_file not found (not strictly needed, can all set viy cli), just print a warning
+#             fixed: --config-file option (was cfg_file instead of config-file)
 
 from typing import Dict, Optional, Any
 from tomli import load as toml_load
@@ -105,7 +108,7 @@ class Settings:
             self,
             cli_args: Dict[str, Any],
             version: bool = False,
-            cfg_file: Optional[str] = 'open-pnp.toml',
+            config_file: Optional[str] = 'open-pnp.toml',
             image_data: Optional[str] = 'images.toml',
             bind_pnp_server: Optional[str] = '0.0.0.0',
             port: Optional[int] = 8080,
@@ -120,7 +123,7 @@ class Settings:
             no_default_cfg: Optional[bool] = False,
     ):
         self.__settings = {
-            'cfg_file': cfg_file,
+            'config_file': config_file,
             'version': version,
             'image_data': image_data,
             'bind_pnp_server': bind_pnp_server,
@@ -135,30 +138,28 @@ class Settings:
             'default_cfg': default_cfg,
             'no_default_cfg': no_default_cfg,
         }
-        self.__args = {}
-        self.__set_cli_args(cli_args)
-
-    def __set_cli_args(self, cli_args: Dict[str, Any]):
         self.__args = ({k: v for k, v in cli_args.items() if v})
         self.__settings.update(self.__args)
+        self.update(self.config_file)
 
-    def update(self, cfg_file: str):
+    def update(self, config_file: str):
         try:
-            with open(cfg_file, 'rb') as f:
+            with open(config_file, 'rb') as f:
                 self.__settings.update(toml_load(f))
         except FileNotFoundError as e:
-            print(f'ERROR: Data file {cfg_file} not found! ({e})')
-            exit(1)
+            # don't exit if config_file not found (not strictly needed, can all set viy cli), just print a warning
+            print(f'WARNING: Settings file {config_file} not found! ({e})')
+            # exit(1)
         except TOMLDecodeError as e:
             print(
-                f'ERROR: Data file {cfg_file} is not in valid toml format! ({e})')
+                f'ERROR: Settings file {config_file} is not in valid toml format! ({e}), (see https://toml.io/en/)')
             exit(2)
-
-        self.__settings.update(self.__args)
+        else:
+            self.__settings.update(self.__args)
 
     @property
-    def cfg_file(self) -> str:
-        return self.__settings['cfg_file']
+    def config_file(self) -> str:
+        return self.__settings['config_file']
 
     @property
     def version(self) -> bool:
@@ -317,7 +318,7 @@ class Images:
             exit(1)
         except TOMLDecodeError as e:
             print(
-                f'ERROR: Data file {images_file} is not in valid toml format! ({e})')
+                f'ERROR: Data file {images_file} is not in valid toml format! ({e}) (see https://toml.io/en/)')
             exit(2)
 
     @property

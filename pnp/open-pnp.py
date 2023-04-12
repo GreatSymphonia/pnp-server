@@ -3,17 +3,21 @@
 #
 # License: GNU General Public License v2
 #
+
 # Author: thl-cmk[at]outlook[dot]com
 # URL   : https://thl-cmk.hopto.org
 # Date  : 2022-12-10
 # File  : open-pnp.py
+
 #
 # Basic Cisco PnP server for Day0 provisioning
 #
-# based on https://github.com/oliverl-21/Open-PnP-Server
-#
-# Cisco doc on https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/
-#
+
+# Based on      : https://github.com/oliverl-21/Open-PnP-Server
+# Cisco doc at  : https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/
+# TOML doc at   : https://toml.io/en/
+# Jinja2 doc at : https://jinja.palletsprojects.com/en/3.0.x/templates/
+
 # 2022-12-14: added count in status page
 #             added check if image/config file is available
 # 2022-12-15: renamed ./vars/vars.py to ./vars/settings.py
@@ -36,11 +40,14 @@
 # 2023-02-26: reorganized open-pnp.py in to open_pnp_classes.py and open_pnp_utils.py
 # 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
 # 2023-03-13: added '--no-default-cfg' option
+# 2023-04-11: added flask options to remove whitespaces by default, changed version format (major.minor.micro-date)
+
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
+
 # ToDo:
-#       add remove inactive job on IOS-XE devices if no space for image update
+#       add "install remove inactive" images job on IOS-XE devices if no space for image update
 
 # system libs
 # from re import compile as re_compile
@@ -78,7 +85,7 @@ from open_pnp_utils import (
 )
 
 
-PNP_SERVER_VERSION = '20230313.v1.0.3'
+PNP_SERVER_VERSION = '1.0.4-202300411'
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -289,6 +296,8 @@ def check_update(udi: str):
 
 # flask
 app = Flask(__name__, template_folder='./templates')
+app.jinja_env.lstrip_blocks = True
+app.jinja_env.trim_blocks = True  # removes empty lines, i.e. in loops
 
 
 @app.route('/')
@@ -320,7 +329,7 @@ def buttons():
 
     if button == 'Reload CFG':
         IMAGES.load_image_data(SETTINGS.image_data)
-        SETTINGS.update(SETTINGS.cfg_file)
+        SETTINGS.update(SETTINGS.config_file)
 
     if udi in devices.keys():
         device = devices[udi]
@@ -458,11 +467,13 @@ def pnp_work_response():
 
 
 if __name__ == '__main__':
+    # clear screen
+    print("\033c\033[3J", end='')
 
     ERROR = ErrorCodes()
     PNPFLOW = PnpFlow()
     SETTINGS = Settings(vars(parse_arguments(PNP_SERVER_VERSION)))
-    SETTINGS.update(SETTINGS.cfg_file)
+    # SETTINGS.update(SETTINGS.cfg_file)
 
     if SETTINGS.version:
         print(PNP_SERVER_VERSION)
@@ -480,10 +491,10 @@ if __name__ == '__main__':
         cli.show_server_banner = lambda *args: None
 
     if SETTINGS.image_url == '':
-        print(f'image-url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
+        print(f'image-url not set, check {SETTINGS.config_file} or see open-pnp.py -h')
         exit(1)
     if SETTINGS.config_url == '':
-        print(f'config-url not set, check {SETTINGS.cfg_file} or see open-pnp.py -h')
+        print(f'config-url not set, check {SETTINGS.config_file} or see open-pnp.py -h')
         exit(1)
 
     if SETTINGS.debug:
@@ -507,6 +518,7 @@ if __name__ == '__main__':
         print(f'Status page running on : http://{SETTINGS.bind_pnp_server}:{SETTINGS.port}')
     print()
     print(f'{PNP_SERVER_VERSION} | '
-          f'Written by thl-cmk, see https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision')
+          f'Written by thl-cmk[at]outlook[dot]com | '
+          f'see https://thl-cmk.hopto.org/gitlab/bits-and-bytes/cisco_day0_provision')
     print()
     app.run(host=SETTINGS.bind_pnp_server, port=SETTINGS.port)

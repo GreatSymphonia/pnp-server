@@ -6,42 +6,42 @@
 # File  : status.html
 
 #
-# 2023-03-13: moved error columns to debug output
+# 2023-03-13: moved error columns to the debug output
+# 2023-04-11: fine tuning output (formatting)
 #
 
 #}
-
 {% macro header_row() %}
     <tr>
-        <th>Count</th>
-        <th>Action</th>
-        <th>Serial number</th>
-        <th>Platform</th>
-        <th>HW rev.</th>
-        <th>IP-Address</th>
-        <th>PnP flow</th>
-        <th>Status</th>
-        <th>First seen</th>
-        <th>Last contact</th>
-        <th>Current job</th>
-        <th>Current version</th>
-        <th>Target version</th>
-        <th>Last message</th>
-        {% if debug %}
-            <th>Current image</th>
-            <th>Target image</th>
-            <th>Size</th>
-            <th>Free space</th>
-            <th>Destination</th>
-            <th>Error code</th>
-            <th>Last error</th>
-            <th>Error count</th>
-            <th>Hard error</th>
-            <th>Backoff</th>
-        {% endif %}
-    </tr>
+                        <th>Count</th>
+                        <th>Action</th>
+                        <th>Serial number</th>
+                        <th>Platform</th>
+                        <th>HW rev.</th>
+                        <th>IP-Address</th>
+                        <th>PnP flow</th>
+                        <th>Status</th>
+                        <th>First seen</th>
+                        <th>Last contact</th>
+                        <th>Current job</th>
+                        <th>Current version</th>
+                        <th>Target version</th>
+                        <th>Last message</th>
+                        {% if debug %}
+                        <th>Current image</th>
+                        <th>Target image</th>
+                        <th>Size</th>
+                        <th>Free space</th>
+                        <th>Destination</th>
+                        <th>Error code</th>
+                        <th>Last error</th>
+                        <th>Error count</th>
+                        <th>Hard error</th>
+                        <th>Backoff</th>
+                        {% endif %}
+                    </tr>
 {% endmacro %}
-
+{# --- #}
 {% macro add_empty_rows() %}
     {% set min_rows = 50 %}
     {% if devices|length < min_rows %}
@@ -51,17 +51,11 @@
             {% set num_columns = num_columns + 10 %}
         {% endif %}
         {% for i in range (0, min_rows - current_rows) %}
-        <tr>
-            <td> {{ loop.index + current_rows}}</td>
-            {% for c in range(0, num_columns) %}
-            <td></td>
-            {% endfor %}
-        </tr>
+                    <tr><td>{{ loop.index + current_rows}}</td>{% for c in range(0, num_columns) %}<td></td>{% endfor %}</tr>
         {% endfor %}
     {% endif %}
 {% endmacro %}
-
-
+{# --- #}
 <!DOCTYPE html>
 <html>
     <head>
@@ -168,26 +162,29 @@
         <div class="scrollTable">
             <table>
                 <thead>
-                {{ header_row() }}
+                {{header_row() -}}
+{# needed to keep format #}
                 </thead>
                 <tbody>
                     {% for device in devices %}
                     <tr>
-                        <td> {{ loop.index }}</td>
+                        <td>{{ loop.index }}</td>
                         <td>
+{#
                             <!--
                             <form method="post" action="/buttons">
                                 <input class="action" type="submit" value="Refresh" name="{{ device.udi }}" {{ device.refresh_button }}""/>
                             </form>
                             -->
+#}
                             <form method="post" action="/buttons">
                                 <input class="action" type="submit" value="Remove" name="{{ device.udi }}"/>
                             </form>
                         </td>
                         {% if debug %}
-                            <td class="{{ device.status_class }}"><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{device.serial }}</a></td>
+                        <td class="{{ device.status_class }}"><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{device.serial }}</a></td>
                         {% else %}
-                            <td class="{{ device.status_class }}">{{ device.serial }}</td>
+                        <td class="{{ device.status_class }}">{{ device.serial }}</td>
                         {% endif %}
                         <td>{{ device.platform }}</td>
                         <td>{{ device.hw_rev }}</td>
@@ -201,23 +198,25 @@
                         <td>{{ device.target_image.version }}</td>
                         <td>{{ device.error_code_readable }}</td>
                         {% if debug %}
-                            <td>{{ device.image }}</td>
-                            <td> <a href="{{ image_base_url }}/{{ device.target_image.image }}" target="_blank">{{device.target_image.image }}</a></td>
-                            <td>{{ device.target_image.size }}</td>
-                            <td>{{ device.destination_free }}</td>
-                            <td>{{ device.destination_name }}</td>
-                            <td>{{ device.error_code }}</td>
-                            <td>{{ device.error_message }}</td>
-                            <td>{{ device.error_count }}</td>
-                            <td>{{ device.hard_error }}</td>
-                            <td>{{ device.backoff }}</td>
+                        <td>{{ device.image }}</td>
+                        <td> <a href="{{ image_base_url }}/{{ device.target_image.image }}" target="_blank">{{device.target_image.image }}</a></td>
+                        <td>{{ device.target_image.size }}</td>
+                        <td>{{ device.destination_free }}</td>
+                        <td>{{ device.destination_name }}</td>
+                        <td>{{ device.error_code }}</td>
+                        <td>{{ device.error_message }}</td>
+                        <td>{{ device.error_count }}</td>
+                        <td>{{ device.hard_error }}</td>
+                        <td>{{ device.backoff }}</td>
                          {% endif %}
                     </tr>
                     {% endfor %}
-                    {{ add_empty_rows() }}
+                    {{- add_empty_rows() -}}
+{# needed to keep format #}
                 </tbody>
                 <tfoot>
-                    {{ header_row() }}
+                    {{header_row() -}}
+{# needed to keep format #}
                 </tfoot>
             </table>
         </div>
