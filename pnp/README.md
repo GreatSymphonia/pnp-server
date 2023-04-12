@@ -1,5 +1,19 @@
 # Plug and Play (PnP) server for IOS/IOS-XE based devices 
 
+* [Introduction](pnp/README.md#introduction)
+  * [Acknowledgment](pnp/README.md#acknowledgment)
+* [Prerequisites](pnp/README.md#prerequisites)
+* [How to use](pnp/README.md#how-to-use)
+  * [IOS/IOS-XE Images](pnp/README.md#iosios-xe-images)
+  * [Configuration files](pnp/README.md#configuration-files)
+  * [Install the PNP Server](pnp/README.md#install-the-pnp-server)
+  * [Configure the PNP Server](pnp/README.md#configure-the-pnp-server)
+  * [Global settings file open-pnp.tomel](pnp/README.md#global-settings-file-open-pnptoml)
+  * [Images file images.tomel](pnp/README.md#images-file-imagestoml)
+  * [Command Line Options](pnp/README.md#command-line-options)
+* [PnP server discovery](pnp/README.md#pnp-server-discovery)
+* [PnP Status page](pnp/README.md#pnp-status-page)
+
 # Introduction
 
 This is a basic implementation of the Cisco Plug and Play protocol, to fully automate the day0 provisioning of Cisco IOS/IOS-XE devices.
@@ -17,10 +31,11 @@ This project is based on https://github.com/oliverl-21/Open-PnP-Server
 
 ## How to use
 
----
 ### IOS/IOS-XE Images
 Place the IOS/IOS-XE images on an HTTP server where the new devices can download them. If you use this PnP server to 
 provide the images place them in the `images` subdirectory. For the images I would recommend using a _real_ HTTP server.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### Configuration files
@@ -32,8 +47,10 @@ should deliver the configuration files, copy them in the `configs` subdirectory.
 
 **Note**: The _**open-pnp**_ server uses HTTP. So there is no encryption for the configuration files as the are downloaded by the new devices.
 
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
 ---
-### Install the PnP server:
+### Install the PnP server
 
 on Linux
 ```
@@ -104,6 +121,8 @@ You can check if the PnP server is running by opening a web browser and accessin
 
 ![PnP server new status page](pnp-empty-status.png)
 
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
 ---
 ### Configure the PnP server
 
@@ -117,8 +136,10 @@ _**Reload CFG**_ on the status page.
 
 **NOTE:** both files need to be in valid [TOML](https://toml.io/en/) format.
 
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
 ---
-#### Global settings [**open-pnp.toml**](/pnp/open-pnp.toml)
+#### Global settings file [**open-pnp.toml**](/pnp/open-pnp.toml)
 
 ```
 # [settings]
@@ -151,10 +172,12 @@ _**Reload CFG**_ on the status page.
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
----
-#### _IMAGES_ file [**_images.toml_**](/pnp/images.toml)
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
-Each entry in the _IMAGES_ file contains
+---
+#### _Images_ file [**_images.toml_**](/pnp/images.toml)
+
+Each entry in the _Images_ file contains
 - the **name** of the image file as section title
 - the IOS/IOS-XE **version** of the image
 - the **md5** checksum of the image file
@@ -171,6 +194,8 @@ models = ["C1000-8T-2G-L", "C1000-24P-4G-L", "C1000-24T-4G-L", "C1000-24T-4X-L",
 ```
 
 **NOTE:** By default _open-pnp_ expects the image data in _images.toml_. You can change this with the key _image_data_ in _open-pnp.toml_.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### Command Line Options
@@ -218,6 +243,7 @@ optional arguments:
 Usage: python open-pnp.py --config-url  http://192.168.10.133:8080/configs --image-url http://192.168.10.133:8080/images
 
 ```
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### PnP server discovery
@@ -244,7 +270,9 @@ ip dhcp pool autoinstall
  option 43 ascii 5A1D;K4;B2;I192.168.10.15;J8080
  lease 0 2
 ```
-For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works. 
+For more details on PnP server discovery options see [PnP server discovery](https://developer.cisco.com/site/open-plug-n-play/learn/learn-open-pnp-protocol/). There you will also find an overview how the PnP protocol works.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
 
 ---
 ### PnP Status page
@@ -254,3 +282,5 @@ You can monitor the PnP progress on the PnP server status page.
 ![PnP server status page](sample-pnp-status.png)
 
 **Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates' subdirectory.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
