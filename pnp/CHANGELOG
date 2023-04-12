@@ -20,7 +20,8 @@
 2023-02-26: reorganized open-pnp.py in to open_pnp_classes.py and open_pnp_utils.py
 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
 2023-03-13: fixed default-cfg option, added --no-default-cfg option, moved error codes in status.html to the debug section
-2023-04-11: added flask options to remove whitespaces by default, changed version format (major.minor.micro-date)
+2023-04-11: added flask options to remove whitespaces by default
+            changed version format (major.minor.micro-date)
             changed to load settings from config file (open-pnp.toml by default) in the SETTINGS.__init__
             don't exit if cfg_file not found (not strictly needed, can all set viy cli), just print a warning
             fixed: --config-file option (was cfg_file instead of config-file)
