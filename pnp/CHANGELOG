@@ -25,3 +25,4 @@
             changed to load settings from config file (open-pnp.toml by default) in the SETTINGS.__init__
             don't exit if cfg_file not found (not strictly needed, can all set viy cli), just print a warning
             fixed: --config-file option (was cfg_file instead of config-file)
+2023-04-17: fixed device update check use version instead of image

@@ -41,7 +41,7 @@
 # 2023-32-07: changed '_' in cli options to '-' -> better readable/more bash like
 # 2023-03-13: added '--no-default-cfg' option
 # 2023-04-11: added flask options to remove whitespaces by default, changed version format (major.minor.micro-date)
-
+# 2023-04-17: fixed device update check use version instead of image
 #
 # pip install flask xmltodict requests ifaddr tomli
 #
@@ -268,7 +268,7 @@ def update_device_info(data: Dict[str, Any]):
     udi = data['pnp']['@udi']
     device = devices[udi]
 
-    device.version = data['pnp']['response']['imageInfo']['versionString']
+    device.version = data['pnp']['response']['imageInfo']['versionString'].strip()
     device.image = data['pnp']['response']['imageInfo']['imageFile'].split(':')[1]
     device.refresh_data = False
     device.last_contact = strftime(SETTINGS.time_format)
@@ -284,7 +284,7 @@ def update_device_info(data: Dict[str, Any]):
 
 def check_update(udi: str):
     device = devices[udi]
-    if device.image == device.target_image.image:
+    if device.version == device.target_image.version:
         device.pnp_flow = PNPFLOW.UPDATE_DOWN
     else:
         device.pnp_flow = PNPFLOW.UPDATE_NEEDED

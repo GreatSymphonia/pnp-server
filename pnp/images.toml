@@ -57,4 +57,9 @@ version = "15.2(7)E7"
 md5 = "11f9750e99be42792eddef7268e58e54"
 size = 16260096 
 models = ["WS-C2960L-24TS-LL"]
-           
+
+["c2960s-universalk9-mz.152-2.E9.bin"]
+version = "15.2(2)E9"
+md5 = "EA604D030B378B6C5C3DDA3D501AC2F5"
+size = 16800768 
+models = ["WS-C2960S-F48TS-L", "WS-C2960S-F24TS-L"]

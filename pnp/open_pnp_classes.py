@@ -35,6 +35,7 @@ class ErrorCodes:
         1816: 'Error verifying checksum for Image',
         1829: 'Image copy was unsuccessful',
         1803: 'Source file not found',
+        1817: 'Running Image checksum same as provided checksum. Upgrade not needed',
     }
 
     def __init__(self):
@@ -52,6 +53,7 @@ class ErrorCodes:
         self.PNP_ERROR_BAD_CHECKSUM = 1816
         self.PNP_ERROR_IMAGE_COPY_UNSUCCESSFUL = 1829
         self.PNP_ERROR_FILE_NOT_FOUND = 1803
+        self.PNP_ERROR_MD5_IDENTICAL = 1817
 
     def readable(self, error_code: int):
         return self.__readable.get(error_code, f'unknown: {error_code}')
