@@ -40,6 +40,12 @@ md5 = "a7e8ff2f05678db21a5c795d711beec7"
 size = 794317769 
 models = ["ISR4451-X/K9"]
 
+["isr4400-universalk9.03.16.04b.S.155-3.S4b-ext.SPA.bin"]
+version = "15.5(3)S4b"
+md5 = "82BF4475903E89451C46CFFA38AC3D36"
+size = 470141220 
+models = ["_ISR4451-X/K9_"]
+
 ["asr1002x-universalk9.17.06.04.SPA.bin"]
 version = "17.6.4"
 md5 = "e78b1a64499faf0e4bef732d19a229fb"
@@ -63,3 +69,9 @@ version = "15.2(2)E9"
 md5 = "EA604D030B378B6C5C3DDA3D501AC2F5"
 size = 16800768 
 models = ["WS-C2960S-F48TS-L", "WS-C2960S-F24TS-L"]
+
+["cat9k_iosxe.17.06.04.SPA.bin"]
+version = "17.6.4"
+md5 = "dae85d113b3438d4f00e49ccdd1ec611"
+size = 1017587860 
+models = ["C9300-48P"]

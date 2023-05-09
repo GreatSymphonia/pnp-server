@@ -16,7 +16,7 @@
             <reason>pnp image installation</reason>
             <delayIn>{{ delay }}</delayIn>
             <user>pnp-install-image</user>
-            <saveConfig>true</saveConfig>
+            <saveConfig>false</saveConfig>
         </reload>
     </request>
 </pnp>

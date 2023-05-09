@@ -182,7 +182,7 @@
                             </form>
                         </td>
                         {% if debug %}
-                        <td class="{{ device.status_class }}"><a href="{{ config_base_url }}/{{ device.serial }}.cfg" target="_blank">{{device.serial }}</a></td>
+                        <td class="{{ device.status_class }}"><a href="{{ config_url }}/{{ device.serial }}.cfg" target="_blank">{{device.serial }}</a></td>
                         {% else %}
                         <td class="{{ device.status_class }}">{{ device.serial }}</td>
                         {% endif %}
@@ -199,7 +199,7 @@
                         <td>{{ device.error_code_readable }}</td>
                         {% if debug %}
                         <td>{{ device.image }}</td>
-                        <td> <a href="{{ image_base_url }}/{{ device.target_image.image }}" target="_blank">{{device.target_image.image }}</a></td>
+                        <td> <a href="{{ image_url }}/{{ device.target_image.image }}" target="_blank">{{device.target_image.image }}</a></td>
                         <td>{{ device.target_image.size }}</td>
                         <td>{{ device.destination_free }}</td>
                         <td>{{ device.destination_name }}</td>
