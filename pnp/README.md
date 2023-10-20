@@ -13,6 +13,7 @@
   * [Command Line Options](pnp/README.md#command-line-options)
 * [PnP server discovery](pnp/README.md#pnp-server-discovery)
 * [PnP Status page](pnp/README.md#pnp-status-page)
+* [Debug the PnP process on the network device](pnp/README.md/debug-the-pnp-process-on-the-network-device)
 
 # Introduction
 
@@ -282,5 +283,36 @@ You can monitor the PnP progress on the PnP server status page.
 ![PnP server status page](sample-pnp-status.png)
 
 **Hint** you can change the status page output by modifying the [**_status.html_**](/pnp/templates/status.html) file in the templates' subdirectory.
+
+[back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
+
+---
+### Debug the PnP process on the network device
+
+After the network devis is connected to the PnP server you can access the decvice on the console. This will not stop the PnP process any more.
+If the device conncted to the PnP server you sould find the PnP profile in the config i.e.
+```
+pnp profile pnp-zero-touch
+ transport http ipv4 192.168.10.133 port 8080
+end
+```
+By removing and re-creationg the PnP profile you will restart the PnP process for the device. This way you can also connect a device by hand to the PnP server.
+```
+conf t
+no pnp profile pnp-zero-touch
+pnp profile pnp-zero-touch
+ transport http ipv4 192.168.10.133 port 8080
+end
+```
+Here are some usefull commnads to debug the PnP process on the device
+```
+debug pnp service copy
+debug pnp service image-install
+debug pnp service config
+debug pnp service exec
+debug pnp service inventory
+debug pnp service script
+debug pnp service reload
+```
 
 [back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
