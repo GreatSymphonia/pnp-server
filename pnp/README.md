@@ -13,7 +13,7 @@
   * [Command Line Options](pnp/README.md#command-line-options)
 * [PnP server discovery](pnp/README.md#pnp-server-discovery)
 * [PnP Status page](pnp/README.md#pnp-status-page)
-* [Debug the PnP process on the network device](pnp/README.md/debug-the-pnp-process-on-the-network-device)
+* [Debug the PnP process on the network device](pnp/README.md#debug-the-pnp-process-on-the-network-device)
 
 # Introduction
 
