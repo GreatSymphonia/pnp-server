@@ -289,8 +289,7 @@ You can monitor the PnP progress on the PnP server status page.
 ---
 ### Debug the PnP process on the network device
 
-After the network devis is connected to the PnP server you can access the decvice on the console. This will not stop the PnP process any more.
-If the device conncted to the PnP server you sould find the PnP profile in the config i.e.
+After the network device is connected to the PnP server you can access the decvice on the console. This will not stop the PnP process any more. If the device is conncted to the PnP server you sould find the PnP profile in the config i.e.
 ```
 pnp profile pnp-zero-touch
  transport http ipv4 192.168.10.133 port 8080
