@@ -125,7 +125,7 @@ class Settings:
             no_default_cfg: Optional[bool] = False,
             mapping_file: Optional[str] = '',
             hostname_from_config: Optional[bool] = True,
-                state_file: Optional[str] = 'log/pnp_state.json',
+            state_file: Optional[str] = 'log/pnp_state.json',
     ):
         self.__settings = {
             'config_file': config_file,
