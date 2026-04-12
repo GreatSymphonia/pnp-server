@@ -178,8 +178,9 @@ def resolve_device_hostname(device: Device):
         device.hostname = ''
         return
 
-    device.hostname = HOSTNAME_MAP.get(serial, '')
-    if not device.hostname and SETTINGS.hostname_from_config:
+    if serial in HOSTNAME_MAP:
+        device.hostname = HOSTNAME_MAP[serial]
+    elif not device.hostname and SETTINGS.hostname_from_config:
         device.hostname = hostname_from_config(serial)
 
 
