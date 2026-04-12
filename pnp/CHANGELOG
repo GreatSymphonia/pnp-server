@@ -26,3 +26,6 @@
             don't exit if cfg_file not found (not strictly needed, can all set viy cli), just print a warning
             fixed: --config-file option (was cfg_file instead of config-file)
 2023-04-17: fixed device update check use version instead of image
+2026-04-12: added mapping to values in the cisco config files for better mapping in the UI
+            added disclaimer about the hard fork in the README.md
+
