@@ -723,9 +723,8 @@ def pnp_work_request():
         device.last_contact = strftime(SETTINGS.time_format)
         device.ip_address = src_add
         if device.hard_error:
-            response = Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
-            save_device_state()
-            return response
+            # Already in hard_error state; no new state change, skip save
+            return Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
         if device.backoff:
             log_info('BACKOFF', SETTINGS.debug)
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
@@ -733,49 +732,37 @@ def pnp_work_request():
             minutes = device.error_count + 1
             if minutes > 10:
                 device.hard_error = True
-            response = Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
-            save_device_state()
-            return response
+                save_device_state()
+            return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
             log_info('PNPFLOW.NEW', SETTINGS.debug)
             device.pnp_flow = PNPFLOW.INFO
-            response = Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
             save_device_state()
-            return response
+            return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
             log_info('PNPFLOW.UPDATE_NEEDED', SETTINGS.debug)
             device.pnp_flow = PNPFLOW.UPDATE_START
-            response = Response(pnp_install_image(udi, correlator), mimetype='text/xml')
             save_device_state()
-            return response
+            return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
             log_info('PNPFLOW.UPDATE_RELOAD', SETTINGS.debug)
-            response = Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
-            save_device_state()
-            return response
+            return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
             log_info('PNPFLOW.UPDATE_DOWN', SETTINGS.debug)
-            response = Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
-            save_device_state()
-            return response
+            return Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
             log_info('PNPFLOW.CONFIG_DOWN', SETTINGS.debug)
-            response = Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
-            save_device_state()
-            return response
+            return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
         log_info(
             f'Other PNP_FLOW: {PNPFLOW.readable(device.pnp_flow)}', SETTINGS.debug)
-        response = Response('', 200)
-        save_device_state()
-        return response
+        return Response('', 200)
     else:
         log_info('REQUEST NEW DEVICE FOUND', SETTINGS.debug)
         create_new_device(udi, src_add)
         # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
         devices[udi].pnp_flow = PNPFLOW.NEW
-        response = Response(pnp_backoff(udi, correlator), mimetype='text/xml')
         save_device_state()
-        return response
+        return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
         # return Response('', 200)
 
 
