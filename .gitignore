@@ -99,3 +99,6 @@ build
 # Visual Studio Code  
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux
+
+# Custom CSV files for testing purposes
+*.csv

@@ -89,6 +89,10 @@ def parse_arguments(pnp_server_version: str) -> arg_Namespace:
                         help='Download URL for config files. I.e. http://192.168.10.133:8080/configs')
     parser.add_argument('--image-data', type=str,
                         help='File containing the image description. (default: images.toml)')
+    parser.add_argument('--mapping-file', '--inventory-file', dest='mapping_file', type=str,
+                        help='CSV mapping file used to map serial numbers to hostnames.')
+    parser.add_argument('--state-file', type=str,
+                        help='JSON state file used to persist devices between server restarts.')
     parser.add_argument('--image-url', type=str,
                         help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
     parser.add_argument('--debug', default=False, action='store_const', const=True,

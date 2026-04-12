@@ -51,10 +51,17 @@
 
 # system libs
 # from re import compile as re_compile
+from csv import DictReader
+from json import dump as json_dump, load as json_load
+from os import makedirs, replace
+from os.path import dirname, isfile, join
+from re import search
 from time import strftime
 from typing import Optional, Dict, Any
 from requests import head
 from logging import getLogger
+from unicodedata import normalize
+from urllib.parse import urlencode
 
 # additional libs
 from flask import (
@@ -86,6 +93,308 @@ from open_pnp_utils import (
 
 
 PNP_SERVER_VERSION = '1.0.4-202300411'
+
+
+def normalize_text(value: str) -> str:
+    if not value:
+        return ''
+    normalized = normalize('NFKD', value)
+    return ''.join(c for c in normalized if ord(c) < 128).strip().lower()
+
+
+def load_hostname_mapping(mapping_file: str) -> Dict[str, str]:
+    if not mapping_file or not isfile(mapping_file):
+        if mapping_file:
+            print(f'WARNING: Mapping file {mapping_file} not found')
+        return {}
+
+    mapping: Dict[str, str] = {}
+    serial_candidates = ['serial', 'no serie', 'no serie', 'sn', 'boardid', 'board id']
+    hostname_candidates = ['hostname', 'identifiant', 'name', 'switch']
+
+    with open(mapping_file, mode='r', encoding='utf-8-sig', newline='') as file_handle:
+        reader = DictReader(file_handle, delimiter=';')
+        if not reader.fieldnames:
+            return mapping
+
+        normalized_headers = {
+            normalize_text(header): header
+            for header in reader.fieldnames
+            if header
+        }
+
+        serial_key = ''
+        hostname_key = ''
+
+        for candidate in serial_candidates:
+            if candidate in normalized_headers:
+                serial_key = normalized_headers[candidate]
+                break
+
+        for candidate in hostname_candidates:
+            if candidate in normalized_headers:
+                hostname_key = normalized_headers[candidate]
+                break
+
+        if not serial_key or not hostname_key:
+            print(
+                f'WARNING: Could not detect serial/hostname columns in mapping file {mapping_file}. '
+                'Expected columns like "No Série" and "Identifiant".'
+            )
+            return mapping
+
+        for row in reader:
+            serial = str(row.get(serial_key, '')).strip().upper()
+            hostname = str(row.get(hostname_key, '')).strip()
+            if serial and hostname:
+                mapping[serial] = hostname
+
+    return mapping
+
+
+def hostname_from_config(serial: str) -> str:
+    if not serial:
+        return ''
+
+    cfg_file = join('configs', f'{serial}.cfg')
+    if not isfile(cfg_file):
+        return ''
+
+    try:
+        with open(cfg_file, mode='r', encoding='utf-8', errors='ignore') as file_handle:
+            for line in file_handle:
+                match = search(r'^\s*hostname\s+(\S+)\s*$', line, flags=0)
+                if match:
+                    return match.group(1)
+    except OSError:
+        return ''
+
+    return ''
+
+
+def resolve_device_hostname(device: Device):
+    serial = device.serial.strip().upper()
+    if not serial:
+        device.hostname = ''
+        return
+
+    if serial in HOSTNAME_MAP:
+        device.hostname = HOSTNAME_MAP[serial]
+    elif not device.hostname and SETTINGS.hostname_from_config:
+        device.hostname = hostname_from_config(serial)
+
+
+def assign_target_image(device: Device):
+    if device.target_image:
+        return
+
+    for image, image_data in IMAGES.images.items():
+        if device.platform in image_data['models']:
+            device.target_image = SoftwareImage(
+                image=image,
+                version=image_data['version'],
+                md5=image_data['md5'],
+                size=image_data['size'],
+            )
+            return
+
+
+def software_image_to_dict(image: Optional[SoftwareImage]) -> Dict[str, Any]:
+    if image is None:
+        return {}
+    return {
+        'image': image.image,
+        'version': image.version,
+        'md5': image.md5,
+        'size': image.size,
+    }
+
+
+def device_to_dict(device: Device) -> Dict[str, Any]:
+    return {
+        'udi': device.udi,
+        'platform': device.platform,
+        'hw_rev': device.hw_rev,
+        'serial': device.serial,
+        'hostname': device.hostname,
+        'ip_address': device.ip_address,
+        'current_job': device.current_job,
+        'first_seen': device.first_seen,
+        'last_contact': device.last_contact,
+        'version': device.version,
+        'image': device.image,
+        'destination_name': device.destination_name,
+        'destination_free': device.destination_free,
+        'status': device.status,
+        'pnp_flow': device.pnp_flow,
+        'target_image': software_image_to_dict(device.target_image),
+        'backoff': device.backoff,
+        'refresh_data': device.refresh_data,
+        'error_code': device.error_code,
+        'error_count': device.error_count,
+        'error_message': device.error_message,
+        'hard_error': device.hard_error,
+        'status_class': device.status_class,
+    }
+
+
+def device_from_dict(data: Dict[str, Any]) -> Optional[Device]:
+    try:
+        device = Device(
+            udi=str(data.get('udi', '')),
+            platform=str(data.get('platform', '')),
+            hw_rev=str(data.get('hw_rev', '')),
+            serial=str(data.get('serial', '')),
+            first_seen=str(data.get('first_seen', strftime(SETTINGS.time_format))),
+            last_contact=str(data.get('last_contact', strftime(SETTINGS.time_format))),
+            src_address=str(data.get('ip_address', '')),
+            current_job=str(data.get('current_job', 'urn:cisco:pnp:device-info')),
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+
+    device.hostname = str(data.get('hostname', ''))
+    device.version = str(data.get('version', ''))
+    device.image = str(data.get('image', ''))
+    device.destination_name = str(data.get('destination_name', ''))
+    device.destination_free = data.get('destination_free')
+    device.status = str(data.get('status', ''))
+
+    target_image = data.get('target_image', {}) or {}
+    if target_image and target_image.get('image'):
+        device.target_image = SoftwareImage(
+            image=str(target_image.get('image', '')),
+            version=str(target_image.get('version', '')),
+            md5=str(target_image.get('md5', '')),
+            size=int(target_image.get('size', 0)),
+        )
+    else:
+        assign_target_image(device)
+
+    device.pnp_flow = int(data.get('pnp_flow', PNPFLOW.NEW))
+    device.backoff = bool(data.get('backoff', False))
+    device.refresh_data = bool(data.get('refresh_data', False))
+    device.error_count = int(data.get('error_count', 0))
+    device.error_message = str(data.get('error_message', ''))
+
+    error_code = int(data.get('error_code', ERROR.ERROR_NO_ERROR))
+    if error_code != ERROR.ERROR_NO_ERROR:
+        device.error_code = error_code
+
+    if bool(data.get('hard_error', False)):
+        device.hard_error = True
+
+    status_class = str(data.get('status_class', ''))
+    if status_class:
+        device.status_class = status_class
+
+    resolve_device_hostname(device)
+    return device
+
+
+def save_device_state():
+    state_file = SETTINGS.state_file
+    if not state_file:
+        return
+
+    base_dir = dirname(state_file)
+    if base_dir:
+        makedirs(base_dir, exist_ok=True)
+
+    payload = {
+        'version': PNP_SERVER_VERSION,
+        'devices': [device_to_dict(device) for device in devices.values()],
+    }
+
+    tmp_file = f'{state_file}.tmp'
+    try:
+        with open(tmp_file, mode='w', encoding='utf-8') as file_handle:
+            json_dump(payload, file_handle, ensure_ascii=True, indent=2)
+        replace(tmp_file, state_file)
+    except OSError as exc:
+        print(f'WARNING: Could not save device state to {state_file} ({exc})')
+
+
+def load_device_state():
+    state_file = SETTINGS.state_file
+    if not state_file or not isfile(state_file):
+        return
+
+    try:
+        with open(state_file, mode='r', encoding='utf-8') as file_handle:
+            payload = json_load(file_handle)
+    except (OSError, ValueError) as exc:
+        print(f'WARNING: Could not load device state from {state_file} ({exc})')
+        return
+
+    loaded_devices = payload.get('devices', []) if isinstance(payload, dict) else []
+    restored = 0
+    for entry in loaded_devices:
+        if not isinstance(entry, dict):
+            continue
+        device = device_from_dict(entry)
+        if not device:
+            continue
+        devices[device.udi] = device
+        restored += 1
+
+    if restored:
+        print(f'Restored {restored} device(s) from state file {state_file}')
+
+
+def filter_devices(device_list, filter_text: str, filter_field: str):
+    allowed_fields = {'all', 'hostname', 'serial', 'platform', 'ip_address', 'status'}
+    active_field = filter_field if filter_field in allowed_fields else 'all'
+    search_text = (filter_text or '').strip().lower()
+
+    if not search_text:
+        return device_list, active_field, ''
+
+    def _matches(device: Device):
+        candidates = {
+            'hostname': str(getattr(device, 'hostname', '') or '').lower(),
+            'serial': str(getattr(device, 'serial', '') or '').lower(),
+            'platform': str(getattr(device, 'platform', '') or '').lower(),
+            'ip_address': str(getattr(device, 'ip_address', '') or '').lower(),
+            'status': str(getattr(device, 'status', '') or '').lower(),
+        }
+
+        if active_field == 'all':
+            return any(search_text in value for value in candidates.values())
+
+        return search_text in candidates[active_field]
+
+    filtered = [device for device in device_list if _matches(device)]
+    return filtered, active_field, filter_text
+
+
+def sorted_devices(device_dict: Dict[str, Device], sort_by: str, sort_order: str, filter_text: str, filter_field: str):
+    allowed_sort = {
+        'hostname', 'serial', 'platform', 'ip_address',
+        'pnp_flow', 'status', 'first_seen', 'last_contact'
+    }
+    key_name = sort_by if sort_by in allowed_sort else 'last_contact'
+    reverse = sort_order == 'desc'
+
+    device_list = list(device_dict.values())
+
+    for device in device_list:
+        resolve_device_hostname(device)
+
+    def _sort_value(device: Device):
+        if key_name == 'pnp_flow':
+            return getattr(device, 'pnp_flow', 0)
+        value = getattr(device, key_name, '')
+        if value is None:
+            return ''
+        return str(value).lower()
+
+    filtered_device_list, active_filter_field, active_filter_text = filter_devices(
+        device_list, filter_text, filter_field
+    )
+
+    filtered_device_list.sort(key=_sort_value, reverse=reverse)
+    return filtered_device_list, key_name, ('desc' if reverse else 'asc'), active_filter_field, active_filter_text
 
 
 def pnp_device_info(udi: str, correlator: str, info_type: str) -> str:
@@ -248,18 +557,13 @@ def create_new_device(udi: str, src_add: str):
         current_job='urn:cisco:pnp:device-info',
     )
     device = devices[udi]
+    resolve_device_hostname(device)
     device.backoff = True
-    for image, image_data in IMAGES.images.items():
-        if platform in image_data['models']:
-            device.target_image = SoftwareImage(
-                image=image,
-                version=image_data['version'],
-                md5=image_data['md5'],
-                size=image_data['size']
-            )
+    assign_target_image(device)
     if not device.target_image:
         device.error_code = ERROR.ERROR_NO_PLATFORM
         device.hard_error = True
+    save_device_state()
 
 
 def update_device_info(data: Dict[str, Any]):
@@ -278,8 +582,11 @@ def update_device_info(data: Dict[str, Any]):
 
     device.platform = data['pnp']['response']['hardwareInfo']['platformName']
     device.serial = data['pnp']['response']['hardwareInfo']['boardId']
+    resolve_device_hostname(device)
+    assign_target_image(device)
     device.destination_name = destination['@name']
     device.destination_free = int(destination['@freespace'])
+    save_device_state()
 
 
 def check_update(udi: str):
@@ -307,15 +614,31 @@ def root():
 
 @app.route('/status', methods=['GET'])
 def status():
-    device_list = []
-    for device in devices.values():
-        device_list.append(device)
+    sort_by = request.args.get('sort_by', 'last_contact')
+    sort_order = request.args.get('sort_order', 'desc')
+    filter_text = request.args.get('filter_text', '')
+    filter_field = request.args.get('filter_field', 'all')
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'desc'
+
+    device_list, active_sort_by, active_sort_order, active_filter_field, active_filter_text = sorted_devices(
+        devices,
+        sort_by,
+        sort_order,
+        filter_text,
+        filter_field,
+    )
+
     jinja_context = {
         'devices': device_list,
         'refresh': SETTINGS.status_refresh,
         'config_url': SETTINGS.config_url,
         'image_url': SETTINGS.image_url,
         'debug': SETTINGS.debug,
+        'sort_by': active_sort_by,
+        'sort_order': active_sort_order,
+        'filter_field': active_filter_field,
+        'filter_text': active_filter_text,
         'pnp_server_version': PNP_SERVER_VERSION,
     }
     result = render_template('status.html', **jinja_context)
@@ -324,12 +647,35 @@ def status():
 
 @app.route('/buttons', methods=['POST'])
 def buttons():
-    udi = list(request.form.keys())[0]
-    button = list(request.form.values())[0]
+    udi = ''
+    button = ''
+
+    if 'reload_data' in request.form:
+        button = 'Reload CFG'
+    else:
+        for key, value in request.form.items():
+            if key in ['sort_by', 'sort_order', 'filter_field', 'filter_text']:
+                continue
+            if value in ['Remove', 'Refresh']:
+                udi = key
+                button = value
+                break
+
+        if button == '':
+            udi = list(request.form.keys())[0]
+            button = list(request.form.values())[0]
+    sort_by = request.form.get('sort_by', request.args.get('sort_by', 'last_contact'))
+    sort_order = request.form.get('sort_order', request.args.get('sort_order', 'desc'))
+    filter_field = request.form.get('filter_field', request.args.get('filter_field', 'all'))
+    filter_text = request.form.get('filter_text', request.args.get('filter_text', ''))
 
     if button == 'Reload CFG':
         IMAGES.load_image_data(SETTINGS.image_data)
         SETTINGS.update(SETTINGS.config_file)
+        HOSTNAME_MAP.clear()
+        HOSTNAME_MAP.update(load_hostname_mapping(SETTINGS.mapping_file))
+        for _device in devices.values():
+            resolve_device_hostname(_device)
 
     if udi in devices.keys():
         device = devices[udi]
@@ -339,7 +685,15 @@ def buttons():
             device.refresh_data = True
             device.error_message = ''
 
-    return redirect('/status', 302)
+    save_device_state()
+
+    query = urlencode({
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'filter_field': filter_field,
+        'filter_text': filter_text,
+    })
+    return redirect(f'/status?{query}', 302)
 
 
 @app.route('/configs/<path:file>')
@@ -369,23 +723,28 @@ def pnp_work_request():
         device.last_contact = strftime(SETTINGS.time_format)
         device.ip_address = src_add
         if device.hard_error:
+            # Device was previously marked hard_error; state is already persisted, skip save
             return Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
-            pass
         if device.backoff:
             log_info('BACKOFF', SETTINGS.debug)
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
             # error_count == 12 -> like hard_error
+            # Note: error_count is only incremented in pnp_work_response, not here
             minutes = device.error_count + 1
             if minutes > 10:
+                # Newly transitioning to hard_error; persist this state change
                 device.hard_error = True
+                save_device_state()
             return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.NEW:
             log_info('PNPFLOW.NEW', SETTINGS.debug)
             device.pnp_flow = PNPFLOW.INFO
+            save_device_state()
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
             log_info('PNPFLOW.UPDATE_NEEDED', SETTINGS.debug)
             device.pnp_flow = PNPFLOW.UPDATE_START
+            save_device_state()
             return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
             log_info('PNPFLOW.UPDATE_RELOAD', SETTINGS.debug)
@@ -404,6 +763,7 @@ def pnp_work_request():
         create_new_device(udi, src_add)
         # return Response(device_info(udi, correlator, 'all'), mimetype='text/xml')
         devices[udi].pnp_flow = PNPFLOW.NEW
+        save_device_state()
         return Response(pnp_backoff(udi, correlator), mimetype='text/xml')
         # return Response('', 200)
 
@@ -423,7 +783,8 @@ def pnp_work_response():
     device.last_contact = strftime(SETTINGS.time_format)
 
     if job_type == 'urn:cisco:pnp:fault':  # error without job info (correlator):-(
-        device.error = data['pnp']['response']['fault']['detail']['XSVC-ERR:error']['XSVC-ERR:details']
+        device.error_message = data['pnp']['response']['fault']['detail']['XSVC-ERR:error']['XSVC-ERR:details']
+        save_device_state()
     else:
         correlator = data['pnp']['response']['@correlator']
         job_status = int(data['pnp']['response']['@success'])
@@ -452,6 +813,7 @@ def pnp_work_response():
                 pass
             _response = pnp_bye(udi, correlator)
             log_info(_response, SETTINGS.debug)
+            save_device_state()
             return Response(_response, mimetype='text/xml')
         elif job_status == 0:
             error_code = int(data['pnp']['response']['errorInfo']['errorCode'].split(' ')[-1])
@@ -460,9 +822,11 @@ def pnp_work_response():
             device.error_code = error_code
             if error_code in [ERROR.PNP_ERROR_BAD_CHECKSUM, ERROR.PNP_ERROR_FILE_NOT_FOUND]:
                 device.hard_error = True
+            save_device_state()
             return Response(pnp_bye(udi, correlator), mimetype='text/xml')
     device.current_job = 'none'
     log_info('Empty Response', SETTINGS.debug)
+    save_device_state()
     return Response('')
 
 
@@ -480,8 +844,10 @@ if __name__ == '__main__':
         exit(0)
 
     IMAGES = Images(SETTINGS.image_data)
+    HOSTNAME_MAP = load_hostname_mapping(SETTINGS.mapping_file)
 
     devices: Dict[str, Device] = {}
+    load_device_state()
 
     if SETTINGS.debug:
         app.debug = True
