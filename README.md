@@ -27,7 +27,10 @@ reload
 
 ---
 ### Want to Contribute?
-Nice ;-) Have a look at the [contribution guidelines](CONTRIBUTING.md "Contributing")
+This is taken from [the original repository of thl-cmk](https://thl-cmk.hopto.org/bits-and-bytes/cisco_day0_provision)
+This was modified for use in my private lab and has modifications that make pretty huge assumptions about how you'd like to use it.
+If it doesn't fit your use case, please fork it and modify it to your needs. It is mainly up at comply with the GPL license of the original repository.mai
+
 
 ---
 ### Autoinstall
