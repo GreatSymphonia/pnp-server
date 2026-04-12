@@ -726,7 +726,6 @@ def pnp_work_request():
             response = Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
             save_device_state()
             return response
-            pass
         if device.backoff:
             log_info('BACKOFF', SETTINGS.debug)
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
