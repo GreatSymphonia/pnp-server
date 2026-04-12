@@ -15,6 +15,7 @@
     <tr>
                         <th>Count</th>
                         <th>Action</th>
+                        <th>Hostname</th>
                         <th>Serial number</th>
                         <th>Platform</th>
                         <th>HW rev.</th>
@@ -46,7 +47,7 @@
     {% set min_rows = 50 %}
     {% if devices|length < min_rows %}
         {% set current_rows = devices|length %}
-        {% set num_columns = 13 %}
+        {% set num_columns = 14 %}
         {%if debug %}
             {% set num_columns = num_columns + 10 %}
         {% endif %}
@@ -76,6 +77,13 @@
             }
             input.action {
                 width: 70px;
+            }
+            input.filter_text {
+                width: 220px;
+            }
+            div.sorting {
+                margin: 10px 0;
+                text-align: center;
             }
             div.header {
                 width: 100%;
@@ -157,7 +165,42 @@
             <!-- ToDo: find a nice place for the reload configuration button -->
             <form method="post" action="/buttons">
                 <input type="submit" value="Reload CFG" name="reload_data"/>
+                <input type="hidden" name="sort_by" value="{{ sort_by }}"/>
+                <input type="hidden" name="sort_order" value="{{ sort_order }}"/>
+                <input type="hidden" name="filter_field" value="{{ filter_field }}"/>
+                <input type="hidden" name="filter_text" value="{{ filter_text }}"/>
             </form>
+            <div class="sorting">
+                <form method="get" action="/status">
+                    <label for="sort_by">Sort by:</label>
+                    <select id="sort_by" name="sort_by">
+                        <option value="last_contact" {% if sort_by == 'last_contact' %}selected{% endif %}>Last contact</option>
+                        <option value="hostname" {% if sort_by == 'hostname' %}selected{% endif %}>Hostname</option>
+                        <option value="serial" {% if sort_by == 'serial' %}selected{% endif %}>Serial</option>
+                        <option value="platform" {% if sort_by == 'platform' %}selected{% endif %}>Platform</option>
+                        <option value="ip_address" {% if sort_by == 'ip_address' %}selected{% endif %}>IP address</option>
+                        <option value="pnp_flow" {% if sort_by == 'pnp_flow' %}selected{% endif %}>PnP flow</option>
+                        <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status</option>
+                        <option value="first_seen" {% if sort_by == 'first_seen' %}selected{% endif %}>First seen</option>
+                    </select>
+                    <label for="sort_order">Order:</label>
+                    <select id="sort_order" name="sort_order">
+                        <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Asc</option>
+                        <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Desc</option>
+                    </select>
+                    <label for="filter_field">Filter:</label>
+                    <select id="filter_field" name="filter_field">
+                        <option value="all" {% if filter_field == 'all' %}selected{% endif %}>All</option>
+                        <option value="hostname" {% if filter_field == 'hostname' %}selected{% endif %}>Hostname</option>
+                        <option value="serial" {% if filter_field == 'serial' %}selected{% endif %}>Serial</option>
+                        <option value="platform" {% if filter_field == 'platform' %}selected{% endif %}>Platform</option>
+                        <option value="ip_address" {% if filter_field == 'ip_address' %}selected{% endif %}>IP address</option>
+                        <option value="status" {% if filter_field == 'status' %}selected{% endif %}>Status</option>
+                    </select>
+                    <input class="filter_text" type="text" name="filter_text" value="{{ filter_text }}" placeholder="Text to match"/>
+                    <input type="submit" value="Apply"/>
+                </form>
+            </div>
         </div>
         <div class="scrollTable">
             <table>
@@ -179,8 +222,13 @@
 #}
                             <form method="post" action="/buttons">
                                 <input class="action" type="submit" value="Remove" name="{{ device.udi }}"/>
+                                <input type="hidden" name="sort_by" value="{{ sort_by }}"/>
+                                <input type="hidden" name="sort_order" value="{{ sort_order }}"/>
+                                <input type="hidden" name="filter_field" value="{{ filter_field }}"/>
+                                <input type="hidden" name="filter_text" value="{{ filter_text }}"/>
                             </form>
                         </td>
+                        <td>{{ device.hostname }}</td>
                         {% if debug %}
                         <td class="{{ device.status_class }}"><a href="{{ config_url }}/{{ device.serial }}.cfg" target="_blank">{{device.serial }}</a></td>
                         {% else %}
@@ -227,6 +275,10 @@
             <div class="reload_cfg">
                 <form class="reload_cfg" method="post" action="/buttons">
                     <input class="reload_cfg" type="submit" value="Reload CFG" name="reload_data"/>
+                    <input type="hidden" name="sort_by" value="{{ sort_by }}"/>
+                    <input type="hidden" name="sort_order" value="{{ sort_order }}"/>
+                    <input type="hidden" name="filter_field" value="{{ filter_field }}"/>
+                    <input type="hidden" name="filter_text" value="{{ filter_text }}"/>
                 </form>
             </div>
         </div>

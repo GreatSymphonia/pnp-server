@@ -123,6 +123,9 @@ class Settings:
             config_url: Optional[str] = '',
             default_cfg: Optional[str] = 'DEFAULT.cfg',
             no_default_cfg: Optional[bool] = False,
+            mapping_file: Optional[str] = '',
+            hostname_from_config: Optional[bool] = True,
+                state_file: Optional[str] = 'log/pnp_state.json',
     ):
         self.__settings = {
             'config_file': config_file,
@@ -139,6 +142,9 @@ class Settings:
             'config_url': config_url,
             'default_cfg': default_cfg,
             'no_default_cfg': no_default_cfg,
+            'mapping_file': mapping_file,
+            'hostname_from_config': hostname_from_config,
+            'state_file': state_file,
         }
         self.__args = ({k: v for k, v in cli_args.items() if v})
         self.__settings.update(self.__args)
@@ -215,6 +221,22 @@ class Settings:
     def no_default_cfg(self) -> bool:
         return self.__settings['no_default_cfg']
 
+    @property
+    def mapping_file(self) -> str:
+        return self.__settings.get('mapping_file', '')
+
+    @property
+    def inventory_file(self) -> str:
+        return self.mapping_file
+
+    @property
+    def hostname_from_config(self) -> bool:
+        return self.__settings['hostname_from_config']
+
+    @property
+    def state_file(self) -> str:
+        return self.__settings.get('state_file', 'log/pnp_state.json')
+
 
 class SoftwareImage:
     def __init__(self, image: str, version: str, md5: str, size: int,):
@@ -232,6 +254,7 @@ class Device:
         self.platform: str = platform
         self.hw_rev: str = hw_rev
         self.serial: str = serial
+        self.hostname: str = ''
         self.ip_address: str = src_address
         self.current_job: str = current_job
         self.first_seen: str = first_seen

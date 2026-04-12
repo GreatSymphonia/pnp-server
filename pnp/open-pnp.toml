@@ -10,6 +10,9 @@
 # default_cfg_file = "default.cfg"
 # no_default_cfg = false
 # image_data = "images.toml"
-# image_url = "http://192.168.10.133:8080/images"
-# config_url = "http://192.168.10.133:8080/configs"
+# image_url = "http://192.168.10.133:9191/images"
+# config_url = "http://192.168.10.133:9191/configs"
 # default_cfg = "DEFAULT.cfg"
+# mapping_file = "../LanETS - Inventaire Switch.csv"
+# hostname_from_config = true
+# state_file = "log/pnp_state.json"
