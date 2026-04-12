@@ -723,14 +723,16 @@ def pnp_work_request():
         device.last_contact = strftime(SETTINGS.time_format)
         device.ip_address = src_add
         if device.hard_error:
-            # Already in hard_error state; no new state change, skip save
+            # Device was previously marked hard_error; state is already persisted, skip save
             return Response(pnp_backoff(udi, correlator, 10), mimetype='text/xml')
         if device.backoff:
             log_info('BACKOFF', SETTINGS.debug)
             # backoff more and more on errors, max error_count = 11 -> 5 * 11 = 55
             # error_count == 12 -> like hard_error
+            # Note: error_count is only incremented in pnp_work_response, not here
             minutes = device.error_count + 1
             if minutes > 10:
+                # Newly transitioning to hard_error; persist this state change
                 device.hard_error = True
                 save_device_state()
             return Response(pnp_backoff(udi, correlator, minutes), mimetype='text/xml')
