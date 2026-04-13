@@ -93,6 +93,8 @@ def parse_arguments(pnp_server_version: str) -> arg_Namespace:
                         help='CSV mapping file used to map serial numbers to hostnames.')
     parser.add_argument('--state-file', type=str,
                         help='JSON state file used to persist devices between server restarts.')
+    parser.add_argument('--config-only', default=False, action='store_const', const=True,
+                        help='Skip image install/upgrade/downgrade flow and only deliver config files.')
     parser.add_argument('--image-url', type=str,
                         help='Download URL for image files. I.e. http://192.168.10.133:8080/images')
     parser.add_argument('--debug', default=False, action='store_const', const=True,

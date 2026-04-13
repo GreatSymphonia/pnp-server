@@ -16,3 +16,4 @@
 # mapping_file = "../LanETS - Inventaire Switch.csv"
 # hostname_from_config = true
 # state_file = "log/pnp_state.json"
+# config_only = true

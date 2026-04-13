@@ -71,6 +71,8 @@ class PnpFlow:
         11: 'update started',
         12: 'no update required/done',
         13: 'update done -> reloading',
+        14: 'bundle to install conversion started',
+        15: 'bundle to install conversion done -> reloading',
 
         21: 'config start',
         22: 'config down -> reloading',
@@ -92,6 +94,8 @@ class PnpFlow:
         self.UPDATE_START = 11
         self.UPDATE_DOWN = 12
         self.UPDATE_RELOAD = 13
+        self.BUNDLE_CONVERT_START = 14
+        self.BUNDLE_CONVERT_RELOAD = 15
 
         self.CONFIG_START = 21
         self.CONFIG_DOWN = 22
@@ -128,6 +132,7 @@ class Settings:
             mapping_file: Optional[str] = '',
             hostname_from_config: Optional[bool] = True,
             state_file: Optional[str] = 'log/pnp_state.json',
+            config_only: Optional[bool] = True,
     ):
         self.__settings = {
             'config_file': config_file,
@@ -147,6 +152,7 @@ class Settings:
             'mapping_file': mapping_file,
             'hostname_from_config': hostname_from_config,
             'state_file': state_file,
+            'config_only': config_only,
         }
         self.__args = ({k: v for k, v in cli_args.items() if v})
         self.__settings.update(self.__args)
@@ -239,6 +245,10 @@ class Settings:
     def state_file(self) -> str:
         return self.__settings.get('state_file', 'log/pnp_state.json')
 
+    @property
+    def config_only(self) -> bool:
+        return self.__settings.get('config_only', False)
+
 
 class SoftwareImage:
     def __init__(self, image: str, version: str, md5: str, size: int,):
@@ -249,7 +259,7 @@ class SoftwareImage:
 
 
 class Device:
-    def __init__(self, udi: str, platform: str, hw_rev: str, serial: str, first_seen: str, last_contact: str,
+    def __init__(self, udi: str, platform: str, hw_rev: str, serial: str, first_seen: str, last_contact: str, bundle_mode: bool,
                  src_address: str, current_job: str):
 
         self.udi: str = udi
@@ -261,6 +271,7 @@ class Device:
         self.current_job: str = current_job
         self.first_seen: str = first_seen
         self.last_contact: str = last_contact
+        self.bundle_mode: bool = bundle_mode
 
         self.version: str = ''
         self.image: str = ''

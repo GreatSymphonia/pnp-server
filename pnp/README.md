@@ -161,6 +161,7 @@ _**Reload CFG**_ on the status page.
 # mapping_file = "../LanETS - Inventaire Switch.csv"
 # hostname_from_config = true
 # state_file = "log/pnp_state.json"
+# config_only = true
 ```
 
 - **bind_pnp_server**: the IP-address of your open-pnp server box. (Use `"::"` for IPv6)
@@ -178,6 +179,7 @@ _**Reload CFG**_ on the status page.
 - **mapping_file**: CSV mapping file used to map serial numbers to hostnames.
 - **hostname_from_config**: if `true`, and no CSV mapping exists for a serial, parse `configs/<SERIAL>.cfg` and extract the `hostname` line.
 - **state_file**: JSON file used to persist device state between server restarts.
+- **config_only**: when set to `true`, skip image install/upgrade/downgrade flow and deliver only config files.
 
 **Note**: you need to uncomment (remove `# `) the lines if you change the values.
 
@@ -216,6 +218,7 @@ Additional options recently added:
 
 - `--mapping-file` (alias: `--inventory-file`): CSV mapping file used for hostname mapping by serial number.
 - `--state-file`: JSON state file used to persist/restore device progress between restarts.
+- `--config-only`: skips image install/upgrade/downgrade and runs configuration flow only.
 - `--no-default-cfg`: disables fallback to `DEFAULT.cfg` when `<SERIAL>.cfg` does not exist.
 
 ```
@@ -223,7 +226,7 @@ $ ./open-pnp.py -h
 usage: open-pnp.py [-h] [-b BIND_PNP_SERVER] [-p PORT] [-r STATUS_REFRESH]
                    [-v] [--config-file CONFIG_FILE] [--config-url CONFIG_URL]
                    [--image-data IMAGE_DATA] [--mapping-file MAPPING_FILE]
-                   [--state-file STATE_FILE] [--image-url IMAGE_URL] [--debug]
+                   [--state-file STATE_FILE] [--config-only] [--image-url IMAGE_URL] [--debug]
                    [--default-cfg DEFAULT_CFG] [--no-default-cfg]
                    [--log-file LOG_FILE] [--log-to-console]
                    [--time-format TIME_FORMAT]
@@ -251,6 +254,7 @@ optional arguments:
                         CSV mapping file used to map serial numbers to hostnames.
   --state-file STATE_FILE
                         JSON state file used to persist devices between server restarts.
+  --config-only         Skip image install/upgrade/downgrade flow and only deliver config files.
   --image-url IMAGE_URL
                         Download URL for image files. I.e. http://192.168.10.133:8080/images
   --debug               Enable Debug output send to "log-file".

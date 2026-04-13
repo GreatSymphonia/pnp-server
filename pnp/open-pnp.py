@@ -244,6 +244,7 @@ def device_to_dict(device: Device) -> Dict[str, Any]:
         'current_job': device.current_job,
         'first_seen': device.first_seen,
         'last_contact': device.last_contact,
+        'bundle_mode': device.bundle_mode,
         'version': device.version,
         'image': device.image,
         'destination_name': device.destination_name,
@@ -270,6 +271,7 @@ def device_from_dict(data: Dict[str, Any]) -> Optional[Device]:
             serial=str(data.get('serial', '')),
             first_seen=str(data.get('first_seen', strftime(SETTINGS.time_format))),
             last_contact=str(data.get('last_contact', strftime(SETTINGS.time_format))),
+            bundle_mode=bool(data.get('bundle_mode', False)),
             src_address=str(data.get('ip_address', '')),
             current_job=str(data.get('current_job', 'urn:cisco:pnp:device-info')),
         )
@@ -469,9 +471,44 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
     log_info(_template, SETTINGS.debug)
     return _template
 
+def pnp_bundle_to_install(udi: str, correlator: str) -> Optional[str]:
+    device = devices[udi]
+    cfg_file = 'BUNDLE_TO_INSTALL.cfg'
+    try:
+        response = head(f'{SETTINGS.config_url}/{cfg_file}', timeout=5)
+    except RequestException as exc:
+        device.error_code = ERROR.ERROR_NO_CFG_FILE
+        device.error_message = f'Could not verify BUNDLE_TO_INSTALL.cfg URL ({exc})'
+        device.hard_error = True
+        return None
+
+    if response.status_code != 200:
+        device.error_code = ERROR.ERROR_NO_CFG_FILE
+        device.error_message = f'BUNDLE_TO_INSTALL.cfg not found at {SETTINGS.config_url}'
+        device.hard_error = True
+        return None
+
+    device.current_job = 'urn:cisco:pnp:config-upgrade'
+    device.pnp_flow = PNPFLOW.BUNDLE_CONVERT_START
+    save_device_state()
+    jinja_context = {
+        'udi': udi,
+        'correlator': correlator,
+        'base_url': SETTINGS.config_url,
+    }
+    _template = render_template('bundle_to_install.xml', **jinja_context)
+    log_info(_template, SETTINGS.debug)
+    return _template
+
 
 def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
+    if device.target_image is None:
+        device.error_code = ERROR.ERROR_NO_IMAGE
+        device.error_message = f'No target image mapping found for platform {device.platform}'
+        device.hard_error = True
+        return
+
     image_name = device.target_image.image
     if not isfile(join('images', image_name)):
         device.error_code = ERROR.ERROR_NO_IMAGE_FILE
@@ -512,6 +549,15 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
         device.hard_error = True
 
 
+def pnp_job_failure(udi: str, correlator: str, fallback_message: str) -> str:
+    device = devices[udi]
+    message = device.error_message if device.error_message else fallback_message
+    device.status = f'ERROR: {message}'
+    device.backoff = False
+    save_device_state()
+    return pnp_backoff(udi, correlator, 10)
+
+
 def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
     cfg_file = f'{device.serial}.cfg'
@@ -529,7 +575,7 @@ def pnp_config_upgrade(udi: str, correlator: str) -> Optional[str]:
             device.hard_error = True
             return
 
-    device.current_job = 'urn:cisco:pnp:device-info'
+    device.current_job = 'urn:cisco:pnp:config-upgrade'
     device.pnp_flow = PNPFLOW.CONFIG_START
     jinja_context = {
         'udi': udi,
@@ -590,6 +636,7 @@ def create_new_device(udi: str, src_add: str):
         udi=udi,
         first_seen=strftime(SETTINGS.time_format),
         last_contact=strftime(SETTINGS.time_format),
+        bundle_mode=False,
         src_address=src_add,
         serial=serial,
         platform=platform,
@@ -614,6 +661,10 @@ def update_device_info(data: Dict[str, Any]):
 
     device.version = data['pnp']['response']['imageInfo']['versionString'].strip()
     device.image = data['pnp']['response']['imageInfo']['imageFile'].split(':')[1]
+
+    # Détecter BUNDLE mode : le switch boote sur un .bin au lieu de packages.conf
+    device.bundle_mode = device.image.endswith('.bin')  # True = BUNDLE, False = INSTALL
+
     device.refresh_data = False
     device.last_contact = strftime(SETTINGS.time_format)
     for filesystem in data['pnp']['response']['fileSystemList']['fileSystem']:
@@ -631,13 +682,36 @@ def update_device_info(data: Dict[str, Any]):
 
 def check_update(udi: str):
     device = devices[udi]
+
+    if device.target_image is None:
+        device.error_code = ERROR.ERROR_NO_IMAGE
+        device.error_message = f'No target image mapping found for platform {device.platform}'
+        device.hard_error = True
+        return
+
+    if SETTINGS.config_only:
+        device.pnp_flow = PNPFLOW.UPDATE_DOWN
+        device.status = 'config-only mode: skipping image update/downgrade'
+        return
+
+    # Si le switch est en BUNDLE mode, conversion prioritaire avant tout upgrade
+    if device.bundle_mode:
+        device.pnp_flow = PNPFLOW.BUNDLE_CONVERT_START
+        return
+
     if device.version == device.target_image.version:
         device.pnp_flow = PNPFLOW.UPDATE_DOWN
     else:
         device.pnp_flow = PNPFLOW.UPDATE_NEEDED
+        if device.destination_free is None:
+            device.error_code = ERROR.PNP_ERROR_NO_FILESYSTEM_INFO
+            device.error_message = 'Could not determine destination free space from device-info'
+            device.hard_error = True
+            return
         if device.destination_free < device.target_image.size:
             _mb = round(device.target_image.size / 1024 / 1024)
             device.error_code = ERROR.ERROR_NO_FREE_SPACE
+            device.error_message = f'Not enough free space for image update. Required about {_mb} MB.'
             device.hard_error = True
 
 
@@ -795,17 +869,43 @@ def pnp_work_request():
             device.pnp_flow = PNPFLOW.INFO
             save_device_state()
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.BUNDLE_CONVERT_START:
+            log_info('PNPFLOW.BUNDLE_CONVERT_START', SETTINGS.debug)
+            save_device_state()
+            payload = pnp_bundle_to_install(udi, correlator)
+            if payload is None:
+                return Response(
+                    pnp_job_failure(udi, correlator, 'bundle to install conversion request failed'),
+                    mimetype='text/xml'
+                )
+            return Response(payload, mimetype='text/xml')
+        if device.pnp_flow == PNPFLOW.BUNDLE_CONVERT_RELOAD:
+            log_info('PNPFLOW.BUNDLE_CONVERT_RELOAD', SETTINGS.debug)
+            # Après reboot, redemander device-info pour confirmer le mode INSTALL
+            return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_NEEDED:
             log_info('PNPFLOW.UPDATE_NEEDED', SETTINGS.debug)
             device.pnp_flow = PNPFLOW.UPDATE_START
             save_device_state()
-            return Response(pnp_install_image(udi, correlator), mimetype='text/xml')
+            payload = pnp_install_image(udi, correlator)
+            if payload is None:
+                return Response(
+                    pnp_job_failure(udi, correlator, 'image-install request failed'),
+                    mimetype='text/xml'
+                )
+            return Response(payload, mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_RELOAD:
             log_info('PNPFLOW.UPDATE_RELOAD', SETTINGS.debug)
             return Response(pnp_device_info(udi, correlator, 'all'), mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.UPDATE_DOWN:
             log_info('PNPFLOW.UPDATE_DOWN', SETTINGS.debug)
-            return Response(pnp_config_upgrade(udi, correlator), mimetype='text/xml')
+            payload = pnp_config_upgrade(udi, correlator)
+            if payload is None:
+                return Response(
+                    pnp_job_failure(udi, correlator, 'config-upgrade request failed'),
+                    mimetype='text/xml'
+                )
+            return Response(payload, mimetype='text/xml')
         if device.pnp_flow == PNPFLOW.CONFIG_DOWN:  # will never reach this point, as pnp is removed bei EEM :-)
             log_info('PNPFLOW.CONFIG_DOWN', SETTINGS.debug)
             return Response(pnp_backoff_terminate(udi, correlator), mimetype='text/xml')
@@ -851,7 +951,7 @@ def pnp_work_response():
                 device.backoff = True
             device.error_count = 0
             if job_type == 'urn:cisco:pnp:device-info':
-                if device.pnp_flow in [PNPFLOW.INFO, PNPFLOW.UPDATE_RELOAD]:
+                if device.pnp_flow in [PNPFLOW.INFO, PNPFLOW.UPDATE_RELOAD, PNPFLOW.BUNDLE_CONVERT_RELOAD]:
                     update_device_info(data)
                     check_update(udi)
                 else:
@@ -859,9 +959,13 @@ def pnp_work_response():
             elif job_type == 'urn:cisco:pnp:image-install':
                 device.pnp_flow = PNPFLOW.UPDATE_RELOAD
             elif job_type == 'urn:cisco:pnp:config-upgrade':
-                # device.pnp_flow = PNPFLOW.CONFIG_DOWN  # we don't reach this as we remove PNP before via EEM
-                device.pnp_flow = PNPFLOW.FINISHED
-                device.status = 'Finished. You can remove the device from the list :-)'
+                if device.pnp_flow == PNPFLOW.BUNDLE_CONVERT_START:
+                    # Conversion envoyée avec succès, le switch va rebooter
+                    device.pnp_flow = PNPFLOW.BUNDLE_CONVERT_RELOAD
+                    device.status = 'bundle to install: reloading...'
+                else:
+                    device.pnp_flow = PNPFLOW.FINISHED
+                    device.status = 'Finished. You can remove the device from the list :-)'
             elif job_type == 'urn:cisco:pnp:backoff':
                 # device.pnp_flow = PNPFLOW.INFO
                 pass
