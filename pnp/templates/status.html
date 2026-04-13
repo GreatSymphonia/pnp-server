@@ -82,20 +82,21 @@
                 width: 220px;
             }
             div.sorting {
-                margin: 10px 0;
+                margin: 12px 0 0 0;
+                padding: 8px 0 10px 0;
                 text-align: center;
             }
             div.header {
                 width: 100%;
-                padding: 5px;
+                padding: 10px;
                 margin:0px;
-                height:70px;
+                height:auto;
             }
             /* start https://stackoverflow.com/questions/23989463/how-to-set-tbody-height-with-overflow-scroll */
             /* answer from brandonkal */
             /* define a container for the table, limit height,  */
             div.scrollTable {
-                height: calc(100vh - 130px); /* header(70) + footer(50) + 10px safety */
+                height: calc(100vh - 210px); /* header(~150) + footer(50) + 10px safety */
                 overflow-y: auto;
                 overflow-x: auto;
             }
