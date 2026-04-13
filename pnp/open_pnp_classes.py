@@ -247,7 +247,7 @@ class Settings:
 
     @property
     def config_only(self) -> bool:
-        return self.__settings.get('config_only', False)
+        return self.__settings.get('config_only', True)
 
 
 class SoftwareImage:
