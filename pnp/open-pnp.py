@@ -93,7 +93,7 @@ from open_pnp_utils import (
 )
 
 
-PNP_SERVER_VERSION = '1.0.4-202300411'
+PNP_SERVER_VERSION = '1.1.1-2024-04-13'
 
 
 def normalize_text(value: str) -> str:
