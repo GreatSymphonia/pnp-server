@@ -874,7 +874,11 @@ def pnp_work_response():
             device.error_count += 1
             device.error_message = data['pnp']['response']['errorInfo']['errorMessage']
             device.error_code = error_code
-            if error_code in [ERROR.PNP_ERROR_BAD_CHECKSUM, ERROR.PNP_ERROR_FILE_NOT_FOUND]:
+            if error_code in [
+                ERROR.PNP_ERROR_BAD_CHECKSUM,
+                ERROR.PNP_ERROR_FILE_NOT_FOUND,
+                ERROR.PNP_ERROR_INVALID_IMAGE_TYPE,
+            ]:
                 device.hard_error = True
             save_device_state()
             return Response(pnp_bye(udi, correlator), mimetype='text/xml')

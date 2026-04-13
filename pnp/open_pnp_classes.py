@@ -32,6 +32,7 @@ class ErrorCodes:
         1412: 'Invalid input detected (config)',
         1413: 'Invalid input detected',
         1609: 'Error while retrieving device filesystem info',
+        1806: 'Invalid image file type (packages.conf provided, expected .bin or .tar)',
         1816: 'Error verifying checksum for Image',
         1829: 'Image copy was unsuccessful',
         1803: 'Source file not found',
@@ -50,6 +51,7 @@ class ErrorCodes:
         self.PNP_ERROR_INVALID_CONFIG = 1412
         self.PNP_ERROR_INVALID_INPUT = 1413
         self.PNP_ERROR_NO_FILESYSTEM_INFO = 1609
+        self.PNP_ERROR_INVALID_IMAGE_TYPE = 1806
         self.PNP_ERROR_BAD_CHECKSUM = 1816
         self.PNP_ERROR_IMAGE_COPY_UNSUCCESSFUL = 1829
         self.PNP_ERROR_FILE_NOT_FOUND = 1803

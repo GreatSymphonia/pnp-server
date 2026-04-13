@@ -28,4 +28,6 @@
 2023-04-17: fixed device update check use version instead of image
 2026-04-12: added mapping to values in the cisco config files for better mapping in the UI
             added disclaimer about the hard fork in the README.md
+2026-04-13: documented Cisco PnP feedback code 1806 (`packages.conf` offered instead of `.bin`/`.tar`)
+            added explicit error-code mapping for 1806 and treat it as hard error
 

@@ -349,4 +349,9 @@ debug pnp service script
 debug pnp service reload
 ```
 
+Known feedback code:
+
+- `1806` (`unknown: 1806` in older versions) means the offered image file is `packages.conf` instead of a valid install image (`.bin` or `.tar`).
+- Fix: in `images.toml`, reference a real image file (`.bin`/`.tar`) and not `packages.conf`.
+
 [back to top](pnp/README.md#plug-and-play-pnp-server-for-iosios-xe-based-devices)
