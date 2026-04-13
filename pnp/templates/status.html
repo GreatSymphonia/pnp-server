@@ -201,6 +201,15 @@
                     <input class="filter_text" type="text" name="filter_text" value="{{ filter_text }}" placeholder="Text to match"/>
                     <input type="submit" value="Apply"/>
                 </form>
+                <p>
+                    Images declares: {{ image_inventory.declared|length }} |
+                    available files: <a href="/images" target="_blank">{{ image_inventory.available|length }}</a> |
+                    missing from disk: {{ image_inventory.missing|length }} |
+                    not referenced in images.toml: {{ image_inventory.unreferenced|length }}
+                </p>
+                {% if image_inventory.missing|length > 0 %}
+                <p><strong>Missing image files:</strong> {{ image_inventory.missing|join(', ') }}</p>
+                {% endif %}
             </div>
         </div>
         <div class="scrollTable">

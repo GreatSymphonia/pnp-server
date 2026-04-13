@@ -53,12 +53,13 @@
 # from re import compile as re_compile
 from csv import DictReader
 from json import dump as json_dump, load as json_load
-from os import makedirs, replace
+from os import listdir, makedirs, replace
 from os.path import dirname, isfile, join
 from re import search
 from time import strftime
 from typing import Optional, Dict, Any
 from requests import head
+from requests.exceptions import RequestException
 from logging import getLogger
 from unicodedata import normalize
 from urllib.parse import urlencode
@@ -207,6 +208,28 @@ def software_image_to_dict(image: Optional[SoftwareImage]) -> Dict[str, Any]:
         'version': image.version,
         'md5': image.md5,
         'size': image.size,
+    }
+
+
+def get_image_inventory() -> Dict[str, Any]:
+    declared_images = sorted(IMAGES.images.keys())
+    available_images = []
+
+    try:
+        available_images = sorted(
+            [name for name in listdir('images') if isfile(join('images', name)) and not name.startswith('.')]
+        )
+    except OSError:
+        available_images = []
+
+    missing_images = [name for name in declared_images if not isfile(join('images', name))]
+    unreferenced_images = [name for name in available_images if name not in declared_images]
+
+    return {
+        'declared': declared_images,
+        'available': available_images,
+        'missing': missing_images,
+        'unreferenced': unreferenced_images,
     }
 
 
@@ -449,7 +472,23 @@ def pnp_backoff_terminate(udi: str, correlator: str) -> str:
 
 def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
     device = devices[udi]
-    response = head(f'{SETTINGS.image_url}/{device.target_image.image}')
+    image_name = device.target_image.image
+    if not isfile(join('images', image_name)):
+        device.error_code = ERROR.ERROR_NO_IMAGE_FILE
+        device.error_message = (
+            f'Image "{image_name}" declared in {SETTINGS.image_data} is missing in images/.'
+        )
+        device.hard_error = True
+        return
+
+    try:
+        response = head(f'{SETTINGS.image_url}/{image_name}', timeout=5)
+    except RequestException as exc:
+        device.error_code = ERROR.ERROR_NO_IMAGE_FILE
+        device.error_message = f'Could not verify image URL {SETTINGS.image_url}/{image_name} ({exc})'
+        device.hard_error = True
+        return
+
     if response.status_code == 200:
         device.current_job = 'urn:cisco:pnp:image-install'
         device.pnp_flow = PNPFLOW.UPDATE_START
@@ -459,7 +498,7 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
             'udi': udi,
             'correlator': correlator,
             'base_url': SETTINGS.image_url,
-            'image': device.target_image.image,
+            'image': image_name,
             'md5': device.target_image.md5.lower(),
             'destination': device.destination_name,
             'delay': 0,  # reload in seconds
@@ -469,6 +508,7 @@ def pnp_install_image(udi: str, correlator: str) -> Optional[str]:
         return _template
     else:
         device.error_code = ERROR.ERROR_NO_IMAGE_FILE
+        device.error_message = f'Image URL returned HTTP {response.status_code}: {SETTINGS.image_url}/{image_name}'
         device.hard_error = True
 
 
@@ -628,6 +668,7 @@ def status():
         filter_text,
         filter_field,
     )
+    image_inventory = get_image_inventory()
 
     jinja_context = {
         'devices': device_list,
@@ -639,6 +680,7 @@ def status():
         'sort_order': active_sort_order,
         'filter_field': active_filter_field,
         'filter_text': active_filter_text,
+        'image_inventory': image_inventory,
         'pnp_server_version': PNP_SERVER_VERSION,
     }
     result = render_template('status.html', **jinja_context)
@@ -699,6 +741,18 @@ def buttons():
 @app.route('/configs/<path:file>')
 def serve_configs(file):
     return send_from_directory('configs', file, mimetype='text/plain')
+
+
+@app.route('/images')
+def list_sw_images():
+    image_inventory = get_image_inventory()
+    links = ''.join(
+        [f'<li><a href="/images/{name}" target="_blank">{name}</a></li>' for name in image_inventory['available']]
+    )
+    return Response(
+        f'<html><body><h1>Available images</h1><ul>{links}</ul></body></html>',
+        mimetype='text/html',
+    )
 
 
 @app.route('/images/<path:file>')
