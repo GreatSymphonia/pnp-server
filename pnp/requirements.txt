@@ -12,7 +12,7 @@ pkg_resources==0.0.0
 requests==2.33.0
 tomli==2.0.1
 typing_extensions==4.4.0
-urllib3==2.6.3
+urllib3==2.7.0
 Werkzeug==3.1.6
 xmltodict==0.13.0
 zipp==3.19.1
